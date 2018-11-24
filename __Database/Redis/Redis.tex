@@ -62,10 +62,11 @@
  	escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
  	keywordstyle=\color{blue},       % keyword style
  	stringstyle=\color{mymauve}\ttfamily,     % string literal style
- 	frame=single,
+ 	frame=L,
+ 	xleftmargin = .05\textwidth,
  	rulesepcolor=\color{red!20!green!20!blue!20},
  	% identifierstyle=\color{red},
- 	language=c++,
+ 	language=php,
  }
  \author{\kaishu 郑华}
  \title{\heiti Redis笔记}
@@ -76,8 +77,10 @@
 
 \chapter{Redis 简介}
 	
-	\url{http://www.runoob.com/redis/redis-backup.html}
+	\section{参考文献}
+		\url{http://www.runoob.com/redis/redis-backup.html}
 	
+		进阶：\url{https://www.cnblogs.com/hjwublog/p/5660578.html}
 	\section{应用场景}
 		\begin{itemize}
 			\item 缓存
@@ -107,55 +110,239 @@
 		\end{lstlisting}
 
 \chapter{基本操作}	
+	redis命令\textbf{不区分大小写}，所以\verb|get var|和\verb|GET var|是等价的
 	
-1	\section{Key}
-		\subparagraph{须知}redis命令\textbf{不区分大小写}，所以\verb|get var|和\verb|GET var|是等价的
-		
-		\subparagraph{keys [pattern]} 返回相应的的key
-		
-		\subparagraph{dump key } 序列化给定key,并返回序列化的值
-		
-		\subparagraph{randomkey} 返回随机的key
-		
-		\subparagraph{exists key} 判断key是否存在
-		
-		\subparagraph{type key} 返回key 存储的类型
-		
-		\subparagraph{del key} 删除key
-		
-		\subparagraph{expire key seconds} 给key设置过期时间
-		
-		\subparagraph{persist key} 移除key 的过期时间，key将持久保存
-		
-	\section{SET}\verb|SET name "runoob"|->\verb|SET key value|
-		
-	\section{GET}\verb|GET key|
+	\section{选库}
+		使用\textbf{Select} 命令用于\textit{切换到}\textbf{指定的数据库}，数据库索引号 index 用数字值指定，以 0 作为起始索引值。
 	
+	\section{Key}
+		\begin{table}[H]
+			\centering
+			\caption{常用命令}
+			\begin{tabular}{p{5cm}<{\centering} | p{10cm}<{\centering}}
+				\hline
+					命令  &  含义 \\
+				\hline
+					\textbf{keys} [pattern] & 返回相应的的key \\
+					\textbf{set} key value & 设定一个key-value \\
+					\textbf{get} key &  获取一个key的值\\
+					\textbf{dump} key & 序列化给定key,并返回序列化的值\\
+					\textbf{randomkey} & 返回随机的key \\
+					\textbf{exists} key & 判断key是否存在 \\
+					\textbf{type} key & 返回key 存储的类型 \\
+					\textbf{del} key &  删除key \\
+					\textbf{expire} key seconds & 给key设置过期时间 \\
+					\textbf{persist} key & 移除key 的过期时间，key将持久保存 \\
+				\hline
+			\end{tabular}
+		\end{table}
 
+	
+	
 \chapter{数据类型}	
 	\section{string}
 		\textbf{二进制安全的}。意思是redis的string可以包含任何数据。比如jpg图片或者序列化的对象 
 		
 		一个键最大能存储\verb|512MB|
 		
+		\begin{itemize}[itemindent = 1em] 
+			\item \verb@set key value [ex 秒数]|[px 毫秒数]  [nx]|[xx]@	:设置键值
+				\begin{itemize}
+					\item \verb|nx |表示key 不存在时 执行操作
+					\item \verb|xx |表示key 存在时 执行操作
+					\item \verb|ex |表示设置 过期时间
+					\item \verb|px |表示设置 持续时间，\verb|ex |与\verb|px |不能同时设置
+				\end{itemize}
+			\item \verb|mset key1 v1 key2 v2 ...| :一次性设置多个键值对(multi set) 			
+			\item \verb|get key | 获取key 的值
+			\item \verb|mget key1 key2 ...| :一次性获取多个键的值
+			\item \verb|setrange key offset value |:把字符串的\verb|offset |偏移字节改为\verb|value|
+				\begin{lstlisting}
+	set greet hello
+	get greet --> hello
+	setrange greet 2 x
+	get greet --> hexlo
+	
+	setrange greet 2 ??
+	get greet --> he??o
+	
+	// 当偏移量大于字符长度时，多余部分将自动以0x00 填充
+	setrange greet 6 !
+	get greet --> he??o0x00!
+				\end{lstlisting}
+			\item \verb|append key value| :把value 追加到key 的原值上
+			\item \verb|getrange key start stop| :获取字符串中 \verb|start, stop| 范围的值
+				\begin{itemize}
+					\item 左闭右闭区间，从0开始
+					\item 负数 表示倒数第多少
+				\end{itemize}
+			
+			\item \verb|getset key newValue| :获取并返回旧值，并设置新值
+			\item \verb@incr|decr key@ :增1或减1，不存在的key 当成0再incr 返回。与之对应的有\verb|incrby key num|
+			\item \verb|getbit key offset| :获取值的二进制的对应位上的值，从高位开始
+			\item \verb|setbit key offset value| :设置对应2进制位上的值，offset 最长能达到\verb|2^32-1|位
+			\item \verb|bitop op destKey key1 [key2 key3 ...]| :对[key1 key2..] 做op，并将结果保存到destKey 中，op 可以为一下几种\verb|AND OR NOT XOR|
+		\end{itemize}
+				
 	\section{list}
-	
+		按照插入顺序排序。你可以添加一个元素到列表的头部（左边）或者尾部（右边）
+		
+		\begin{table}[H]
+			\centering
+			\caption{list操作说明}
+			\begin{tabular}{p{5cm}<{\centering} | p{10cm}<{\centering}}
+				\toprule
+					命令 &  含义 \\
+				\midrule
+					\textbf{lpush} key value1[value2] &  	\\
+					\textbf{lpop} key & 		\\
+					\textbf{blpop} key1[key2] timeout &		\\
+					\textbf{brpop} key1[key2] timeout &		\\
+					\textbf{lindex} key index &		\\
+					\textbf{linsert}  &		\\
+				    \textbf{llen} key & 		\\
+					\textbf{lpushx} key value & 		\\
+					\textbf{lrange} key start stop & 		\\
+					\textbf{lset} key index value &		\\
+					\textbf{ltrim} key start stop & 		\\
+					\textbf{rpop} key & 		\\
+					\textbf{rpoplpush}  & 		\\
+					\textbf{rpush} key value1[value2] & 		\\
+					\textbf{rpushx} key value & 		\\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+		
 	\section{hash}
-	
+		\begin{table}[H]
+			\centering
+			\caption{hash 操作说明}
+			\begin{tabular}{p{5cm}<{\centering} | p{10cm}<{\centering}}
+				\toprule
+					命令 &  含义 \\
+				\midrule
+					\textbf{hdel} key field[field2]&  	\\
+					\textbf{hexists} key filed & 		\\
+					\textbf{hget} key field &			\\
+					\textbf{hincrby} key field increment &		\\
+					\textbf{hkeys} key &					\\
+					\textbf{hlen} key &					\\
+					\textbf{hmget} key field1[filed2] & 	\\
+					\textbf{hmset} key field1[field2] & 	\\
+					\textbf{hset} key field value & 		\\
+					\textbf{hsetnx} key field value &	\\
+					\textbf{hvals} key & 				\\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+		
 	\section{set}
-	
+		Set 是 String 类型的无序集合。集合成员是唯一的，这就意味着集合中不能出现重复的数据。
+		
+		Redis 中集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是 O(1)。
+		
+		\begin{table}[H]
+			\centering
+			\caption{set操作说明}
+			\begin{tabular}{p{5cm}<{\centering} | p{10cm}<{\centering}}
+				\toprule
+					命令 &  含义 \\
+				\midrule
+				\textbf{SADD} key mem1 [m2] 	 &  	\\
+				\textbf{SCARD} key 	 & 		\\
+				\textbf{SDIFF} key1 [key2] 	 &		\\
+				\textbf{SINTER} key1 [key2] 	 &		\\
+				\textbf{SISMEMBER} key mem 	 &		\\
+				\textbf{SMEMBERS} key 	 &		\\
+				\textbf{SMOVE} sr des mem 	 & 		\\
+				\textbf{SPOP} key 	 & 		\\
+				\textbf{SRANDMEMBER} key	 & 		\\
+				\textbf{SREM} key mem1 [mem2] 	 &		\\
+				\textbf{SUNION} key1 [key2] 	 & 		\\
+				\bottomrule
+			\end{tabular}
+		\end{table}	
+		
 	\section{zset}
-	
+		有序集合和集合一样也是string类型元素的集合,且不允许重复的成员。
+		
+		不同的是每个元素都会关联一个double类型的分数。redis正是通过分数来为集合中的成员进行从小到大的排序。
+		
+		有序集合的成员是唯一的,但分数(score)却可以重复。
+		
+		集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是O(1)。
+		\begin{table}[H]
+			\centering
+			\caption{zset操作说明}
+			\begin{tabular}{p{5cm}<{\centering} | p{11cm}<{\centering}}
+				\toprule
+					命令 &  含义 \\
+				\midrule
+				\textbf{ZADD}    &  	\\
+				\textbf{ZCARD}   & 		\\
+				\textbf{ZCOUNT}	 &		\\
+				\textbf{ZINCRBY} &		\\
+				\textbf{ZRANGE}	 &		\\
+				\textbf{ZRANGEBYLEX}   &		\\
+				\textbf{ZRANGEBYSCORE} & 		\\
+				\textbf{ZRANK}  & 		\\
+				\textbf{ZREM} 	& 		\\
+				\textbf{ZREMRANGEBYLEX} &		\\
+				\textbf{ZREVRANK} 	    & 		\\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+
 	\section{事务与锁}
 		类似于mysql 的 start transaction， 可以保证原子性，可以使用rollback 取消操作。
 		
 		redis 使用 multi  命令实现
 		
 		使用 watch 锁，解决多用户竞争
+		
+		Redis 事务可以一次执行多个命令， 并且带有以下两个重要的保证：
+			\begin{itemize}[itemindent = 2em]
+				\item 批量操作在发送 EXEC 命令前被放入队列缓存。
+				\item 收到 EXEC 命令后进入事务执行，事务中任意命令执行失败，其余的命令依然被执行。
+				\item 在事务执行过程，其他客户端提交的命令请求不会插入到事务执行命令序列中。
+			\end{itemize}
+		
+		一个事务从开始到执行会经历以下三个阶段：
+			\begin{enumerate}[itemindent = 2em]
+				\item 开始事务。
+				\item 命令入队。
+				\item 执行事务。
+			\end{enumerate}
+		
+		\begin{table}[H]
+			\centering
+			\caption{事务与锁 操作说明}
+			\begin{tabular}{p{5cm}<{\centering} | p{10cm}<{\centering}}
+				\toprule
+					命令 &  含义 \\
+				\midrule
+				\textbf{MULTI} 	 &  标记一个事务块的开始。	\\
+				\textbf{EXEC} 	 & 	执行所有事务块内的命令。	\\
+				\textbf{DISCARD} 	 &	取消事务，放弃执行事务块内的所有命令。	\\
+				\textbf{UNWATCH} 	 &	取消 WATCH 命令对所有 key 的监视。	\\
+				\textbf{WATCH} key [key ...] 	 &	监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打断。	\\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+
+\chapter{订阅与发布}
+
+
 
 \chapter{持久化}	
 	\section{rdb 持久化}
-	
+		\paragraph{SAVE|BGSAVE}
+			用于创建当前数据库的备份。
+			
+		\paragraph{恢复数据}
+			如果需要恢复数据，只需将备份文件 (dump.rdb) \textbf{移动到} \verb|redis| \textbf{安装目录}并启动服务即可。
+			
+			获取 redis 目录可以使用 CONFIG 命令:\verb|CONFIG GET dir|
 	
 	\section{aof 持久化}
 	
@@ -164,7 +351,30 @@
 	\section{主从复制}
 	
 	\section{分布式集群}
+		\url{https://www.cnblogs.com/yuanermen/p/5717885.html}
+		
+		\url{https://www.cnblogs.com/cjsblog/p/9048545.html}
+		
+		
+		\url{https://www.cnblogs.com/liyasong/p/redis_jiqun.html?utm_source=itdadao&utm_medium=referral}
+		
+	\section{Redis分区}
+		分区是分割数据到多个Redis实例的处理过程，因此每个实例只保存key的一个子集。
 
+		\paragraph{分区的优势}
+			\begin{itemize}
+				\item 通过利用多台计算机内存的和值，允许我们构造更大的数据库。
+				\item 通过多核和多台计算机，允许我们扩展计算能力；通过多台计算机和网络适配器，允许我们扩展网络带宽。
+			\end{itemize}
+		
+		redis集群大多数支持在\textbf{运行时}\textit{增加、删除节点}的透明数据平衡的能力，但是类似于客户端分区、代理等其他系统则不支持这项特性。然而，一种叫做\verb|presharding|的技术对此是有帮助的。
+		
+		\paragraph{分区类型}
+			\begin{itemize}
+				\item 范围分区：0-1000,1001-2000，..
+				\item 哈希分区
+			\end{itemize}
+			
 \chapter{应用}	
 	\section{位图法统计活跃用户}
 		\begin{itemize}
@@ -204,6 +414,24 @@
 	\section{微博之粉丝关系与推送微博}
 	
 	\section{哈希数据存储微博}
-		    
+
+
+
+\chapter{PHP 与 Redis}
+	\section{关联}
+		\begin{lstlisting}
+	$redis = new redis();  
+	$result = $redis->connect('127.0.0.1', 6379);  
+	var_dump($result); //结果：bool(true)  
+	
+	$result = $redis->set('test',"11111111111");  
+	var_dump($result);    //结果：bool(true)  
+	
+	$result = $redis->get('test');  
+	var_dump($result);   //结果：string(11) "11111111111"  
+	
+	$redis->delete('test');  
+	var_dump($redis->get('test'));  //结果：bool(false)  
+		\end{lstlisting}		    
 \end{document} 
  		    

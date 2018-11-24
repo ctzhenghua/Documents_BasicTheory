@@ -79,4 +79,10 @@
 \contentsline {section}{\numberline {4.1}类图符号}{53}{section.4.1}
 \contentsline {section}{\numberline {4.2}类图关系}{54}{section.4.2}
 \contentsline {section}{\numberline {4.3}时间序列图}{55}{section.4.3}
-\contentsline {section}{\numberline {4.4}包图}{55}{section.4.4}
+\contentsline {paragraph}{对象}{55}{section*.17}
+\contentsline {paragraph}{生命线}{55}{section*.18}
+\contentsline {paragraph}{控制焦点}{55}{section*.19}
+\contentsline {paragraph}{消息}{56}{section*.20}
+\contentsline {subparagraph}{自关联消息}{56}{section*.21}
+\contentsline {subparagraph}{Combined Fragments}{57}{figure.4.9}
+\contentsline {section}{\numberline {4.4}包图}{58}{section.4.4}

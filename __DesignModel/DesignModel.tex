@@ -1263,8 +1263,57 @@
 		\end{enumerate}
 
 	\section{时间序列图}
-	
-	
+		参考：\url{https://www.cnblogs.com/downey/p/4890830.html}
+		\paragraph{对象}
+			\begin{enumerate}
+				\item 第一种方式包括\textbf{对象名和类名}
+				\item 第二中方式\textbf{只显示类名}不显示对象名，即表示他是一个匿名对象
+				\item 第三种方式\textbf{只显示对象名}不显示类明。
+			\end{enumerate}
+			
+			\begin{figure}[H]
+				\centering
+				\includegraphics[scale=1]{SequenceDiagram-Object}
+				\caption{对象的3种方式}
+			\end{figure}
+			
+			
+		\paragraph{生命线}
+			生命线在顺序图中表示为从对象图标\textbf{向下延伸的一条虚线}，表示对象存在的时间。
+		
+		\paragraph{控制焦点}
+			控制焦点是顺序图中表示时间段的符号，在这个时间段内对象将执行相应的操作。\textbf{用小矩形表示}。
+		
+		\paragraph{消息}
+			消息一般分为同步消息（Synchronous Message）(实线、实心箭头)，异步消息（Asynchronous Message）(实线、普通箭头)和返回消息（Return Message）(虚线、普通箭头)
+			
+			\begin{figure}[H]
+				\centering
+				\includegraphics{Message}
+				\caption{消息类型区分}
+			\end{figure}
+			
+			\begin{itemize}
+				\item 同步消息：消息的发送者把控制传递给消息的接收者，然后停止活动，等待消息的接收者放弃或者返回控制。用来表示同步的意义。
+				\item 异步消息：消息发送者通过消息把信号传递给消息的接收者，然后继续自己的活动，不等待接受者返回消息或者控制。异步消息的接收者和发送者是并发工作的。
+				\item 返回消息：返回消息表示从过程调用返回
+			\end{itemize}
+			
+			\subparagraph{自关联消息}
+				表示方法的自身调用以及一个对象内的一个方法调用另外一个方法。
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[scale=1.5]{SelfMessage}
+					\caption{自关联消息}
+				\end{figure}
+				
+			\subparagraph{Combined Fragments}
+				\begin{figure}[H]
+					\centering
+					\includegraphics[scale=1]{CombinedFragments}
+					\caption{区域模块}
+				\end{figure}
 	\section{包图}
 
 
