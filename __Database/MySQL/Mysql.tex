@@ -117,7 +117,51 @@
 			\end{tabular}
 		\end{table}
 
-
+	\section{MySql 框架、执行流程}
+		\url{https://www.cnblogs.com/annsshadow/p/5037667.html}
+		
+		\subsection{MySQL 框架}
+			\begin{figure}[H]
+				\centering
+				\includegraphics[scale=0.6]{sqlArch}
+				\includegraphics[scale=0.3]{mysqlArch}
+				\caption{MySQL框架}
+			\end{figure}
+			
+		\subsection{查询执行流程}
+			\subparagraph{连接}
+				\begin{enumerate}[itemindent = 2em]
+					\item 客户端\textbf{发起一条Query请求}，监听客户端的‘连接管理模块’接收请求
+					\item 将请求\textbf{转发到}‘连接进/线程模块’
+					\item 调用‘用户模块’来进行\textbf{授权}检查
+					\item 通过检查后，‘连接进/线程模块’\textbf{从‘线程连接池’中取出空闲的被缓存的连接线程和客户端请求对接}，如果失败则创建一个新的连接请求
+				\end{enumerate}
+			
+			\subparagraph{处理}
+				\begin{enumerate}[itemindent = 2em]
+					\item \textbf{先查询缓存}，检查Query语句是否完全匹配，接着再检查是否具有权限，\textbf{都成功则直接取数据返回}
+					\item 上一步有失败则转交给‘命令解析器’，经过\textbf{词法分析，语法分析}后生成解析树
+					\item 接下来是预处理阶段，处理解析器无法解决的语义，\textbf{检查权限}等，生成新的解析树
+					\item 再转交给对应的模块处理
+					\item 如果是\verb|SELECT|查询还会经由‘\textbf{查询优化器}’\textbf{做大量的优化}，\textbf{生成执行计划}
+					\item 模块收到请求后，通过‘访问控制模块’检查所连接的用户是否有访问目标表和目标字段的权限
+					\item 有则调用‘表管理模块’，先是查看table cache中是否存在，有则直接对应的表和获取锁，否则重新打开表文件
+					\item 根据表的\textbf{meta数据}，获取表的存储引擎类型等信息，通过接口调用对应的存储引擎处理
+					\item 上述过程中产生数据变化的时候，\textit{若打开日志功能}，则会记录到相应\textbf{二进制日志文件}中
+				\end{enumerate}
+			
+			\subparagraph{结果}
+				\begin{enumerate}[itemindent = 2em]
+					\item Query请求完成后，将结果集返回给‘连接进/线程模块’
+					\item 返回的也可以是相应的状态标识，如成功或失败等
+					\item ‘连接进/线程模块’进行后续的清理工作，并继续等待请求或断开与客户端的连接
+				\end{enumerate}
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[scale=.26]{mysqlProcess}
+					\caption{查询执行流程}
+				\end{figure}
 \chapter{查询}
 	\section{基本查询语句}
 		\subsection{条件查询}
@@ -313,40 +357,46 @@ having
 					\end{enumerate}
 		
 \section{连接查询}
-			查询的时候\textbf{只从一张表检索数据}称为单表查询
-			
-			在实际的开发中，数据并不是存储在一张表中的，是同时存储在多张表中，这些表和表之间存在关系，我们在检索的时候通常需要将多长表联合起来取得有效数据，这种\textbf{多表查询}被\textbf{称为连接查询}或者叫做跨表查询。
-			
-			连接查询根据连接方式可以分为如下方式：
-				\begin{itemize}[itemindent = 2em]
-					\item  内连接
-						\begin{itemize}[itemindent = 3em]
-							\item 等值连接
-							\item 非等值连接
-							\item 自连接
-						\end{itemize}
-						
-					\item  外连接
-						\begin{itemize}[itemindent = 3em]
-							\item 左外连接
-							\item 右外连接
-						\end{itemize}
-						
-					\item  全连接【几乎不用】
+	查询的时候\textbf{只从一张表检索数据}称为单表查询
+	
+	在实际的开发中，数据并不是存储在一张表中的，是同时存储在多张表中，这些表和表之间存在关系，我们在检索的时候通常需要将多长表联合起来取得有效数据，这种\textbf{多表查询}被\textbf{称为连接查询}或者叫做跨表查询。
+	
+	连接查询根据连接方式可以分为如下方式：
+		\begin{itemize}[itemindent = 2em]
+			\item  内连接
+				\begin{itemize}[itemindent = 3em]
+					\item 等值连接
+					\item 非等值连接
+					\item 自连接
 				\end{itemize}
 				
-		\subsection{内连接}		
-				查找两张表匹配的数据。
+			\item  外连接
+				\begin{itemize}[itemindent = 3em]
+					\item 左外连接
+					\item 右外连接
+				\end{itemize}
 				
-				A表和B表能够完全匹配的记录查询出来，被称为内连接。
-				\begin{figure}[H]
-					\centering
-					\includegraphics[scale=1]{innoJoin}
-					\caption{内连接}
-				\end{figure}
-				
-				\subparagraph{别名的使用，内连接的等值连接} 在进行多表连接查询的时候，尽量给表起别名，这样效率高，可读性高
-					\begin{lstlisting}
+			\item  全连接【几乎不用】
+		\end{itemize}
+		
+		\begin{figure}[H]
+			\centering
+			\includegraphics[scale=.76]{joins}
+			\caption{SQL Joins}
+		\end{figure}
+		
+	\subsection{内连接}		
+			查找两张表匹配的数据。
+			
+			A表和B表能够完全匹配的记录查询出来，被称为内连接。
+			\begin{figure}[H]
+				\centering
+				\includegraphics[scale=1]{innoJoin}
+				\caption{内连接}
+			\end{figure}
+			
+			\subparagraph{别名的使用，内连接的等值连接} 在进行多表连接查询的时候，尽量给表起别名，这样效率高，可读性高
+				\begin{lstlisting}
 // 将表emp 用别名 e表示..	
 
 // 查询员工名与其对应的部门名
@@ -428,6 +478,11 @@ having
 			\textbf{希望将哪边表的数据完全显示出来}，\verb| join| 的前边的修饰词 \verb|right left| 可以恰好说明，如上，\textbf{希望将dept表完全显示}，那么\verb|先写dept| 的话，那么就在\verb|join 的左边|，就是 \verb|left join|.	
 			
 	
+	\subsection{内连接外连接 原理性能分析}
+		\url{https://www.cnblogs.com/cdf-opensource-007/p/6507678.html}
+		
+		\url{https://www.cnblogs.com/cdf-opensource-007/p/6517627.html}
+	
 	\section{子查询}
 		\url{https://www.cnblogs.com/zhuiluoyu/p/5822481.html}
 	
@@ -467,6 +522,12 @@ having
 	
 	
 	\section{执行顺序}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[scale=.6]{sqlProcess}
+			\caption{SQL 解析顺序}
+		\end{figure}
+		
 		\begin{lstlisting}
 	FROM <left_table>
 	ON <join_condition>
@@ -478,7 +539,26 @@ having
 	DISTINCT <select_list>
 	ORDER BY <order_by_condition>
 	LIMIT <limit_number>
-		\end{lstlisting}	
+		\end{lstlisting}
+		
+	\section{执行过程}
+		\url{https://www.cnblogs.com/cdf-opensource-007/p/6502556.html}
+		
+		\begin{enumerate}
+			\item \textbf{加载数据表至内存}：一条查询的sql语句\textbf{先执行的是} \verb|FROM student| 负责\textbf{把数据库的表文件加载到内存中去}。（mysql数据库在计算机上也是一个进程，cpu会给该进程分配一块内存空间）
+			\item \textbf{条件过滤}：\verb|WHERE grade < 60|，会把所示\textit{表中的数据进行过滤}，\textbf{取出符合条件的记录行，生成一张临时表}
+			\item \textbf{分组}：\verb|GROUP BY `name`|会把临时表在内存中切分成若干临时表。
+			\item \textbf{选择}：\textbf{SELECT 的执行读取规则}分为sql语句中有无GROUP BY两种情况。
+				\begin{itemize}
+					\item 当没有GROUP BY时，SELECT 会根据后面的字段名称对内存中的一张临时表整列读取。
+					\item 当查询sql中有GROUP BY时，会对内存中的若干临时表分别执行SELECT，而且只取各临时表中的第一条记录，然后再形成新的临时表。这就决定了查询sql使用GROUP BY的场景下，SELECT后面跟的一般是参与分组的字段和聚合函数，否则查询出的数据要是情况而定。另外聚合函数中的字段可以是表中的任意字段，需要注意的是聚合函数会自动忽略空值。
+				\end{itemize}
+			\item \textbf{对分组后的数据再次过滤}：\verb|HAVING num >= 2|对上图所示临时表中的数据再次过滤，与\verb|WHERE语句|不同的是\verb|HAVING| 用在\verb|GROUP BY|之后，\verb|WHERE|是对\verb|FROM student|从数据库表文件加载到内存中的原生数据过滤，而\verb|HAVING |是对\verb|SELECT |语句执行之后的临时表中的数据过滤。
+			\item \textbf{对以上的临时表进行排序}：\verb@ORDER BY xx DESC|ASC@
+		\end{enumerate}
+		
+				
+		
 \chapter{增、删、改}
 	\section{表、(with约束)}
 		\subsection{create table tableName(columName type(length) [constraints]);}
@@ -511,6 +591,8 @@ having
 		\subsection{alter table tableName modify column newType(lenght);}
 		
 		\subsection{alter table tableName drop column;}
+	
+	
 		
 	\section{数据}
 		\subsection{insert into tableName(column,..) values (value1,...);}
@@ -519,6 +601,8 @@ having
 			当不指定条件时，将全表的该字段全部更新。
 		
 		\subsection{delete from tableName where xx;}
+	
+	
 		
 	\section{约束}
 		\subsection{非空约束 not null}
@@ -762,10 +846,7 @@ CREATE TABLE t3
 	\section{主从模式-replication}
 	
 	\section{集群}
-	
-	\section{MySql 框架、执行流程}
-		\url{https://www.cnblogs.com/annsshadow/p/5037667.html}
-	
+
 	\section{SQL语句优化}
 		\subsection{explain 详解}
 		
