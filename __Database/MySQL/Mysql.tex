@@ -818,8 +818,19 @@ CREATE TABLE t3
 	
 \chapter{进阶操作} 
 	\section{binlog 日志-重要}
-		\url{http://www.cnblogs.com/martinzhang/p/3454358.html}
+		MySQL的二进制日志可以说是MySQL\textbf{最重要的日志}了，它记录了所有的\textbf{DDL和DML}(除了数据查询语句)语句，\textbf{以事件形式记录，还包含语句所执行的消耗的时间}，MySQL的二进制日志是事务安全型的。
 		
+		二进制有两个最重要的使用场景: 
+			\begin{itemize}
+				\item 其一：MySQL Replication\textbf{在Master端开启binlog}，\textit{Master把它的二进制日志传递给slaves}来达到master-slave数据一致的目的。 
+				\item 其二：自然就是数据恢复了，通过使用mysqlbinlog工具来使恢复数据。
+			\end{itemize}    
+		    
+		\subparagraph{参考}
+			\begin{itemize}
+				\item \url{https://www.cnblogs.com/martinzhang/p/3454358.html}
+			\end{itemize}
+			
 		\subsection{GTID}
 		
 	\section{备份-重要}
@@ -847,75 +858,208 @@ CREATE TABLE t3
 	
 	\section{集群}
 
-	\section{SQL语句优化}
-		\subsection{explain 详解}
+	\section{explain 详解}
+		\url{https://www.cnblogs.com/xuanzhi201111/p/4175635.html}
 		
+		在日常工作中，我们会有时会开慢查询去记录一些执行时间比较久的SQL语句，找出这些SQL语句并不意味着完事了，些时我们常常用到explain这个命令来查看一个这些SQL语句的执行计划，查看该SQL语句有没有使用上了索引，有没有做全表扫描，这都可以通过explain命令来查看。
 		
-		\subsection{慢查询日志}
-			MySQL \textbf{慢查询日志}是指 MySQL 中\textbf{执行时间超过} \verb|long_query_time| \textbf{阀值的 SQL 语句}。
+		expain出来的信息有10列，分别是\verb|id|、\verb|select_type|、\verb|table|、\verb|type|、\verb|possible_keys|、\verb|key|、\verb|key_len|、\verb|ref|、\verb|rows|、\verb|Extra|,下面对这些字段出现的可能进行解释：
+		
+		\subsection{id}
+			SQL执行的顺序的标识,SQL从大到小的执行
+			\begin{itemize}
+				\item id相同时，执行顺序由上至下
+				\item 如果是子查询，id的序号会递增，id值越大优先级越高，越先被执行
+				\item id如果相同，可以认为是一组，从上往下顺序执行；在所有组中，id值越大，优先级越高，越先执行
+			\end{itemize}
 			
-			\verb|Dumbo| 默认每天零晨 \textbf{rotate 慢查询日志}，按日期命名文件，每天一个文件，服务器上保留最近 8 天的慢查询日志文件。
+		\subsection{select\_type}
+			\begin{itemize}
+				\item \verb|SIMPLE|  :简单SELECT,不使用UNION或子查询等
+				\item \verb|PRIMARY| :查询中若包含任何复杂的子部分,最外层的select被标记为PRIMARY
+				\item \verb|UNION| :UNION中的第二个或后面的SELECT语句
+				\item \verb|DEPENDENT UNION| :UNION中的第二个或后面的SELECT语句，取决于外面的查询
+				\item \verb|UNION RESULT| :UNION的结果
+				\item \verb|SUBQUERY| :子查询中的第一个SELECT
+				\item \verb|DEPENDENT SUBQUERY| :子查询中的第一个SELECT，取决于外面的查询
+				\item \verb|DERIVED| :派生表的SELECT, FROM子句的子查询
+				\item \verb|UNCACHEABLE SUBQUERY| :一个子查询的结果不能被缓存，必须重新评估外链接的第一行
+			\end{itemize}
 			
-			\textit{从慢查询日志中统计出执行比较频繁且执行时间比较久、扫描的行数也比较大的 SQL，可以针对这类 SQL 进行优化。}
-		
-			\paragraph{参数说明}
-				慢查询日志相关的几个参数，有先后依赖关系，顺序如下：
-				\begin{enumerate}[itemindent = 2em, itemsep = 0pt,partopsep=0pt]
-					\item \verb|slow_query_log| \\ 是否启用慢查询日志功能,慢查询日志的内容可以在 \textbf{Dumbo 管理平台} \textit{实例管理 --> 日志管理 --> 慢查询日志} 上查看
-					\item \verb|log_slow_admin_statements| \\ 是否记录administrative statements 语句到慢查询日志里。
-					\item \verb|long_query_time| \\ 定义慢查询日志的触发条件，如果 SQL 实际执行时间（不包括锁的时间）超过 \verb|long_query_time| 定义的阀值，此 SQL 则被记录到慢查询日志里。
-					\item \verb|min_examined_row_limit| \\ 只有慢查询语句的执行行数检查返回大于该参数指定值，此慢查询语句才被记录到慢查询日志中。
-				\end{enumerate}
-				
-				\begin{table}[H]
-					\centering
-					\caption{慢查询日志参数}
-					\begin{tabular}{p{6cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}}
-						\hline
-							方法 &  MySQL默认值 &  Dumbo 默认值 & 能否自助修改\\
-						\hline
-						 \verb|slow_query_log| & OFF & ON &  否 \\
-						 \verb|long_query_time| & 10s & 0.1s & 能 \\
-						 \verb|log_slow_admin_statements| & OFF & ON & 否 \\
-						 \verb|log_slow_slave_statements| & OFF & ON &否\\
-						 \verb|min_examined_row_limit| & 0& 100 & 否 \\
-						\hline
-					\end{tabular}					
-				\end{table}
-				
-				
-				因此 \textbf{Dumbo 实例默认配置下}，记录慢查询日志的条件是：
-				\textbf{SQL 实际执行时间超过 0.1s，且此 SQL 的执行行数检查返回值大于 100}。
-			\paragraph{优点}
-				\begin{itemize}
-					\item 语句调优 \\ 通过统计慢查询日志（可联系 Dumbo 值班），找出最耗时的 top 10 语句，优化完成后，再统计新的慢查询日志，一直重复，直到没有产生新的慢查询语句。
-					\item 性能排查 \\ 如果一个实例的 CPU 使用率比较高，可以优先检查一下该实例的慢查询日志，如果慢查询日志刷得比较厉害，可以初步确认是由于 SQL 语句不够优化导致实例 CPU 使用率高，可以通过优化 SQL 来解决。
-				\end{itemize}
-
-		\subsection{查询优化-海量数据}
-		
-		\subsection{经验Tips}
-			\url{https://coolshell.cn/articles/1846.html}
+		\subsection{table}	
+			显示这一行的数据是关于哪张表的
 			
-			\begin{enumerate}
-				\item \textbf{EXPLAIN} \verb|SELECT| 查询 \\ 解释查询语句，查看是否使用到索引(\textbf{Key})
-				\item 当只要一行数据时使用 \verb|LIMIT 1|  \\ 这样会在找到一条数据后停止搜索，而不是继续往后查少下一条符合记录的数据
-				\item 为搜索字段建索引 \\ BTree Or Hash Better Than All
-				\item 在Join表的时候使用相当类型的例，并将其索引
-				\item 千万不要 \verb|ORDER BY RAND()|
-				\item 避免 \verb|SELECT *|
-				\item 永远为每张表设置一个ID
-				\item 使用 \verb|ENUM| 而不是 \verb|VARCHAR|
-				\item 尽可能的使用 \verb|NOT NULL|
-				\item 无缓冲的查询
-				\item 把IP地址存成 \verb|UNSIGNED INT|
-				\item 固定长度的表会更快
-				\item 垂直分割
-				\item 拆分大的 DELETE 或 INSERT 语句
-				\item 越小的列会越快
-				\item 选择正确的存储引擎
+		\subsection{type}
+			
+			\begin{itemize}
+				\item \verb|ALL|：Full Table Scan， MySQL将\textbf{遍历全表}以找到匹配的行
+				\item \verb|Index|: Full Index Scan，index与ALL区别为index类型\textbf{只遍历索引树}
+				\item \verb|Range|:只检索给定范围的行，使用一个索引来选择行
+				\item \verb|Ref|: 表示上述表的连接匹配条件，即哪些列或常量\textbf{被用于查找索引列上的值}
+				\item \verb|Eq_ref|: 	类似ref，区别就在使用的索引是唯一索引，对于每个索引键值，表中只有一条记录匹配，简单来说，就是多表连接中使用primary key或者 unique key作为关联条件
+				\item \verb|Const|、\verb|System|: 当MySQL对查询某部分进行优化，并转换为一个常量时，使用这些类型访问。如将主键置于where列表中，MySQL就能将该查询转换为一个常量,system是const类型的特例，当查询的表只有一行的情况下，使用system
+				\item \verb|NULL|: MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，例如从一个索引列里选取最小值可以通过单独索引查找完成。
+			\end{itemize}
+			
+		\subsection{possible\_keys}
+			指出MySQL能使用哪个索引在表中找到记录，查询涉及到的字段上若存在索引，则该索引将被列出，但不一定被查询使用
+			
+		\subsection{Key}
+			key列显示MySQL实际决定使用的键（索引）
+			
+		\subsection{key\_len}
+			表示索引中使用的字节数，可通过该列计算查询中使用的索引的长度（\verb|key_len|显示的值为索引字段的最大可能长度，并非实际使用长度，即\verb|key_len|是根据表定义计算而得，不是通过表内检索出的）
+			
+			不损失精确性的情况下，长度越短越好 
+			
+		\subsection{ref}
+			表示上述表的连接匹配条件，即哪些列或常量被用于查找索引列上的值
+			
+		\subsection{rows}
+			表示MySQL根据表统计信息及索引选用情况，估算的找到所需的记录所需要读取的行数
+	
+		\subsection{总结}
+			\begin{itemize}
+				\item EXPLAIN不会告诉你关于触发器、存储过程的信息或用户自定义函数对查询的影响情况
+				\item EXPLAIN不考虑各种Cache
+				\item EXPLAIN不能显示MySQL在执行查询时所作的优化工作
+				\item 部分统计信息是估算的，并非精确值
+				\item EXPALIN只能解释SELECT操作，其他操作要重写为SELECT后查看执行计划。
+			\end{itemize}
+			
+	\section{慢查询日志}
+		MySQL \textbf{慢查询日志}是指 MySQL 中\textbf{执行时间超过} \verb|long_query_time| \textbf{阀值的 SQL 语句}。
+		
+		\verb|Dumbo| 默认每天零晨 \textbf{rotate 慢查询日志}，按日期命名文件，每天一个文件，服务器上保留最近 8 天的慢查询日志文件。
+		
+		\textit{从慢查询日志中统计出执行比较频繁且执行时间比较久、扫描的行数也比较大的 SQL，可以针对这类 SQL 进行优化。}
+	
+		\paragraph{参数说明}
+			慢查询日志相关的几个参数，有先后依赖关系，顺序如下：
+			\begin{enumerate}[itemindent = 2em, itemsep = 0pt,partopsep=0pt]
+				\item \verb|slow_query_log| \\ 是否启用慢查询日志功能,慢查询日志的内容可以在 \textbf{Dumbo 管理平台} \textit{实例管理 --> 日志管理 --> 慢查询日志} 上查看
+				\item \verb|log_slow_admin_statements| \\ 是否记录administrative statements 语句到慢查询日志里。
+				\item \verb|long_query_time| \\ 定义慢查询日志的触发条件，如果 SQL 实际执行时间（不包括锁的时间）超过 \verb|long_query_time| 定义的阀值，此 SQL 则被记录到慢查询日志里。
+				\item \verb|min_examined_row_limit| \\ 只有慢查询语句的执行行数检查返回大于该参数指定值，此慢查询语句才被记录到慢查询日志中。
 			\end{enumerate}
+			
+			\begin{table}[H]
+				\centering
+				\caption{慢查询日志参数}
+				\begin{tabular}{p{6cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}}
+					\hline
+						方法 &  MySQL默认值 &  Dumbo 默认值 & 能否自助修改\\
+					\hline
+				 \verb|slow_query_log| & OFF & ON &  否 \\
+				 \verb|long_query_time| & 10s & 0.1s & 能 \\
+				 \verb|log_slow_admin_statements| & OFF & ON & 否 \\
+				 \verb|log_slow_slave_statements| & OFF & ON &否\\
+				 \verb|min_examined_row_limit| & 0& 100 & 否 \\
+					\hline
+				\end{tabular}					
+			\end{table}
+			
+			
+			因此 \textbf{Dumbo 实例默认配置下}，记录慢查询日志的条件是：
+			\textbf{SQL 实际执行时间超过 0.1s，且此 SQL 的执行行数检查返回值大于 100}。
+		\paragraph{优点}
+			\begin{itemize}
+				\item 语句调优 \\ 通过统计慢查询日志（可联系 Dumbo 值班），找出最耗时的 top 10 语句，优化完成后，再统计新的慢查询日志，一直重复，直到没有产生新的慢查询语句。
+				\item 性能排查 \\ 如果一个实例的 CPU 使用率比较高，可以优先检查一下该实例的慢查询日志，如果慢查询日志刷得比较厉害，可以初步确认是由于 SQL 语句不够优化导致实例 CPU 使用率高，可以通过优化 SQL 来解决。
+			\end{itemize}
 		
+		\paragraph{参考}
+			\begin{itemize}
+				\item \url{https://www.cnblogs.com/saneri/p/6656161.html}
+			\end{itemize}
+			
+	\section{查询优化-海量数据}
+	
+	\section{经验Tips}
+		\url{https://coolshell.cn/articles/1846.html}
+		
+		\begin{enumerate}
+			\item \textbf{EXPLAIN} \verb|SELECT| 查询 \\ 解释查询语句，查看是否使用到索引(\textbf{Key})
+			\item 当只要一行数据时使用 \verb|LIMIT 1|  \\ 这样会在找到一条数据后停止搜索，而不是继续往后查少下一条符合记录的数据
+			\item 为搜索字段建索引 \\ BTree Or Hash Better Than All
+			\item 在Join表的时候使用相当类型的例，并将其索引
+			\item 千万不要 \verb|ORDER BY RAND()|
+			\item 避免 \verb|SELECT *|
+			\item 永远为每张表设置一个ID
+			\item 使用 \verb|ENUM| 而不是 \verb|VARCHAR|
+			\item 尽可能的使用 \verb|NOT NULL|
+			\item 无缓冲的查询
+			\item 把IP地址存成 \verb|UNSIGNED INT|
+			\item 固定长度的表会更快
+			\item 垂直分割
+			\item 拆分大的 DELETE 或 INSERT 语句
+			\item 越小的列会越快
+			\item 选择正确的存储引擎
+		\end{enumerate}
+		
+
+\chapter{MySQL 性能优化}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[scale=0.7]{xingNeng}
+		\caption{性能优化结构}
+	\end{figure}
+	
+	\section{影响性能的因素}
+		\subsection{不合理的需求如何优化}
+			需求： 一个论坛帖子总量的统计
+			附加要求：实时更新
+			
+			\begin{itemize}
+				\item 初始阶段：\verb|select count(id)|
+				\item 新建一个表，在这个表中更新这个汇总数据 (频率问题- update 锁)
+				\item 真正的问题在于，实时？创建一个统计表，隔一段时间统计一次并存入(Redis)。
+			\end{itemize}
+		
+		\subsection{无用功能的堆积}
+			\begin{itemize}
+				\item 无用的列堆积
+				\item 错误的表设计
+				\item 无用的表关联
+			\end{itemize}
+		
+		
+		\subsection{哪些数据不适合放在数据库中}
+			\begin{itemize}
+				\item 二进制文件-文件-图片
+				\item 流水队列数据
+				\item 超大文本
+			\end{itemize}
+		
+		
+		\subsection{合理的cache}
+			哪些数据适合放到cache 中
+			\begin{itemize}
+				\item 系统的配置信息 
+				\item 活跃用户的基本信息 
+				\item 活跃用户的定制化信息
+				\item 基于时间段的统计信息
+				\item 读 >>> 写的数据
+			\end{itemize}
+		
+		\subparagraph{减少数据库交互次数}
+		\subparagraph{减少重复执行相同的SQL}
+	
+		\subsection{其他}
+			\begin{itemize}
+				\item cache 系统的不合理利用导致Cache 命中率底下造成的数据库访问量的增加，同事也浪费了Cache系统的硬件资源投入
+				\item 过度依赖面向对象思想，对系统的可扩展性的过度追求，促使系统设计的时候将对象拆的过于分散，造成系统中大量的复杂join 语句，而MySQL 在各数据库系统中的主要优势在于处理简单逻辑的查询，这与其锁定的机制也有较大关系
+				\item 对数据库过度依赖，将大量适合存放于文件系统中的数据存入了数据库中，造成数据库资源的浪费，影响到系统的整体性能，如各种日志信息
+				\item 过度理想化系统的用户体验，是大量的非核心业务消耗过多的资源，如大量
+			\end{itemize}
+			
+	\section{Sql 优化}	
+	
+	\section{Mysql 锁}
+		
+	\section{MySQL 复制}
+	
+	\section{其他优化}
 		    
 \end{document} 
  		    

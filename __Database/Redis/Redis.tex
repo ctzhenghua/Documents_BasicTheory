@@ -425,9 +425,24 @@
 			\caption{主从2种结构、通信方式}
 		\end{figure}
 		
-
+		修改配置文件\verb|slave_xx.conf| 中添加\verb|slaveof Master Port|,然后配置是否开启某某备份等功能即可。
+		
+		\paragraph{Master 配置}
+			\begin{itemize}
+				\item 关闭Rdb 快照，备份工作交给slave
+				\item 可以开启 aof 
+			\end{itemize}
+		
+		\paragraph{Slave 配置}
+			\begin{itemize}
+				\item 声明\verb|slave-of|
+				\item 配置密码\verb|[如果Master 有密码-requirepass]|
+				\item \verb|[某一个]| 打开Rdb 快照功能
+				\item 配置是否只读\verb|slave-read-only|
+			\end{itemize}
 		
 		
+		每次Slave 断开后，无论主动断开还是网络故障，再连接Master，都要Master全部dump 出来的rdb, 再aof， 既同步的过程都要重新执行一遍。所以多台Salve 不要一下都启动起来，否则 Master的IO会突然飙升起来。	
 	\section{分布式集群}
 		 \begin{figure}[H]
 				\centering
@@ -551,6 +566,17 @@
 	
 	$redis->delete('test');  
 	var_dump($redis->get('test'));  //结果：bool(false)  
-		\end{lstlisting}		    
+		\end{lstlisting}	
+		
+		
+		
+
+\chapter{Redis 源码分析}
+	\section{string sds}
+	
+	\section{list}
+	
+	\section{dictionary}	    
+	
 \end{document} 
  		    
