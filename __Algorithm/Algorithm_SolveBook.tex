@@ -18,9 +18,7 @@
  \usepackage{hyperref}
  \CTEXsetup[format+={\flushleft}]{section}
  
- \newcommand{\EQ}[1]{$\textbf{EQ:}#1\ $}
- \newcommand{\ALGORITHM}[1]{$\textbf{Algorithm:}#1\ $}
- \newcommand{\Figure}[1]{$\textbf{Figure }#1\ $}
+ \graphicspath{{figure/}}
  
  \renewcommand{\figurename}{Fig}
  \geometry{left=1.6cm,right=1.8cm,top=2cm,bottom=1.7cm} %设置文章宽度
@@ -3289,9 +3287,48 @@
 	\subsection{解答}
 	
 \section{前序遍历，中序遍历，后序遍历}
-	\subsection{分析}
+	\subsection{已知前序、中序遍历，求后序遍历}
 	
-	\subsection{解答}
+		\textbf{前序遍历}: \verb|GDAFEMHZ|
+		
+		\textbf{中序遍历}: \verb|ADEFGHMZ|
+		
+		\begin{enumerate}
+			\item 根据前序遍历的特点，我们知道根结点为G根据前序遍历的特点，我们知道根结点为G
+			\item 观察中序遍历ADEFGHMZ。其中root节点G左侧的ADEF必然是root的左子树，G右侧的HMZ必然是root的右子树
+			\item 观察左子树ADEF，左子树的中的根节点必然是大树的root的leftchild。在前序遍历中，大树的root的leftchild位于root之后，所以左子树的根节点为D
+			\item 同样的道理，root的右子树节点HMZ中的根节点也可以通过前序遍历求得。在前序遍历中，一定是先把root和root的所有左子树节点遍历完之后才会遍历右子树，并且遍历的左子树的第一个节点就是左子树的根节点。同理，遍历的右子树的第一个节点就是右子树的根节点。
+			\item 观察发现，上面的过程是递归的
+		\end{enumerate}
+	
+	\subsection{已知中序和后序遍历，求前序遍历}
+	
+		\begin{enumerate}
+			\item 根据后序遍历的特点，我们知道后序遍历最后一个结点即为根结点，即根结点为G。
+			\item 观察中序遍历ADEFGHMZ。其中root节点G左侧的ADEF必然是root的左子树，G右侧的HMZ必然是root的右子树。
+			\item 观察左子树ADEF，左子树的中的根节点必然是大树的root的leftchild。在前序遍历中，大树的root的leftchild位于root之后，所以左子树的根节点为D。
+			\item 同样的道理，root的右子树节点HMZ中的根节点也可以通过前序遍历求得。在前后序遍历中，一定是先把root和root的所有左子树节点遍历完之后才会遍历右子树，并且遍历的左子树的第一个节点就是左子树的根节点。同理，遍历的右子树的第一个节点就是右子树的根节点。
+			\item 观察发现，上面的过程是递归的
+		\end{enumerate}
+	
+	\subsection{总结}
+		\begin{enumerate}
+			\item 确定根,确定左子树，确定右子树。
+			\item 在左子树中递归。
+			\item 在右子树中递归。
+			\item 打印当前根。
+		\end{enumerate}
+		
+		结果如图\ref{mid_first}所示：
+			\begin{figure}[H]
+				\centering
+				\includegraphics{Tree_Mid_First}
+				\caption{根据先序和中序确定二叉树}
+				\label{mid_first}
+			\end{figure}
+	
+	\subsection{代码实现思路}
+
 	
 \section{分层遍历二叉树（按层次从上往下，从左往右）}
 	\subsection{分析}

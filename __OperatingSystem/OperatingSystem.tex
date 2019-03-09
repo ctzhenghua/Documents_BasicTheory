@@ -66,7 +66,7 @@
 \setlength{\textheight}{24.00cm}    % 24.62
 
 %%%% 下面的命令设置行间距与段落间距 %%%%
-\linespread{1.4}
+\linespread{1.0}
 \setlength{\parskip}{0.5\baselineskip}
 \geometry{left=1.6cm,right=1.8cm,top=2cm,bottom=1.7cm} %设置文章宽度
 \pagestyle{plain} 		  %设置页面布局
@@ -108,16 +108,16 @@
 \begin{document}          %正文排版开始
  	\maketitle
 	\tableofcontents
+\chapter{程序的组成、编译、运行}
+	\section{程序的组成}
+		\paragraph{位} 
+			\verb|char = 1Byte = 8 bit = ascii = ‘A’;|
+
+	\section{编译}
 	
-\chapter{系统启动与中断}
-	\section{启动}
-
-	\section{中断}
-
-	\section{异常}
-
-	\section{系统调用}
-
+	\section{链接}
+	
+	
 \chapter{物理内存管理}
 	\section{页分配}
 		
@@ -131,62 +131,6 @@
 		
 		\paragraph{内存置换}
 		
-		
-\chapter{进程管理}
-	\section{简介}
-
-	\section{进程状态变化}
-		\paragraph{就绪状态}
-				
-		\paragraph{阻塞状态}
-		
-		\paragraph{运行状态}
-		
-		\paragraph{结束状态}
-		
-	\section{进程调度算法}
-		\paragraph{先来先服务}
-		
-		\paragraph{段作业优先}
-		
-		\paragraph{时间片轮转}
-		
-		\paragraph{优先级轮转}
-		
-		\paragraph{多级反馈队列}
-		
-		\paragraph{响应比优先}
-		
-	\section{进程通信}
-		\paragraph{共享内存}
-		
-		\paragraph{消息传递}
-		
-		\paragraph{管道通信}
-	
-	\section{同步互斥模型}
-
-	\section{死锁}
-		\paragraph{原因}
-			\begin{itemize}
-				\item 环形等待
-				\item 不可剥夺
-			\end{itemize}
-			
-		\paragraph{解决}
-			\subparagraph{预防}
-	
-			\subparagraph{避免} 确定一定的访问顺序来避免死锁（银行家算法）
-
-\chapter{内核线程管理}
-
-\chapter{用户线程管理}
-
-\chapter{CPU调度}
-
-\chapter{同步与互斥}
-
-\chapter{文件系统}
 			    
 \end{document} 
  		    
