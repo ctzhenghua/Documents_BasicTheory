@@ -3,6 +3,7 @@
  \usepackage{graphicx}%学习插入图
  \usepackage{verbatim}%学习注释多行
  \usepackage{booktabs}%表格
+ \usepackage{diagbox}
  \usepackage{geometry}%图片
  \usepackage{amsmath}
  \usepackage{amssymb}
@@ -160,7 +161,13 @@
 			
 			\verb|GRANT ALL ON xxxdb.*  TO 'userName';| 
 	
-	
+		
+		\subsection{查看当前登录用户}
+		
+			\verb|select user();|
+			
+			类似的，查看当前使用的库是哪个，可以使用\verb|select database();|
+			
 	\section{建立和断开Mysql服务器连接}
 		\verb|mysql options|
 		
@@ -400,7 +407,7 @@ sql-mode="STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
 	 	
 	 	DB入门笔记：\url{https://www.cnblogs.com/ggjucheng/archive/2012/11/02/2751119.html}
 	 	
-	 	
+	 	\url{https://www.cnblogs.com/shockerli/p/1000-plus-line-mysql-notes.html}
 	 	
 \chapter{基本概念}
 	 \section{术语}
@@ -510,6 +517,8 @@ sql-mode="STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
 \chapter{数据类型}
 	\url{https://www.cnblogs.com/-xlp/p/8617760.html#undefined}
 	
+	\textit{数据处理}取决与两个方面：\textbf{默认值的定义方式}，\textbf{当前的SQL模式}。
+	
 	\begin{itemize}
 		\item \textbf{整数类型}：BIT、BOOL、TINY INT、SMALL INT、MEDIUM INT、 INT、 BIG INT
 		\item \textbf{浮点数类型}：FLOAT、DOUBLE、DECIMAL
@@ -579,6 +588,8 @@ sql-mode="STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
 		
 		\verb|varchar|可指定n，\verb|text|不能指定，内部存储\verb|varchar|是存入的实际字符数+1个字节（n<=255）或2个字节(n>255)，\verb|text|是实际字符数+2个字节。
 		
+		
+		单引号和双引号都可以，但是sql 标准是单引号，如果为了更好的移植到其他数据库引擎，建议使用单引号。
 		
 	\section{日期类型}
 		\begin{table}[H]
@@ -1563,7 +1574,7 @@ select * from class2;
 			\end{lstlisting}
 			
 	
-\chapter{索引-重要}
+\chapter{索引}
 	\section{简介}
 		索引用于快速找出在某个列中有一特定值的行，不使用索引，MySQL必须从第一条记录开始读完整个表，直到找出相关的行，表越大，查询数据所花费的时间就越多，如果表中查询的列有一个索引，MySQL能够快速到达一个位置去搜索数据文件，而不必查看所有数据，那么将会节省很大一部分时间。
 
@@ -1572,29 +1583,23 @@ select * from class2;
 				\item \textbf{如果没有索引}，那么将从表中第一条记录一条条往下\textbf{遍历}，直到找到该条信息为止。
 				\item \textbf{如果有了索引}，那么会将\textbf{该Phone字段}，\textbf{通过一定的方法进行存储}，\textit{好让查询该字段上的信息时，能够快速找到对应的数据}，而不必在遍历2W条数据了。其中MySQL中的索引的存储类型有两种：\verb|BTREE|、\verb|HASH|。
 			\end{itemize}
-
-	\section{优点、缺点和使用原则}
-		\subparagraph{优点}
-			\begin{itemize}[itemindent = 1em]
-				\item 所有的MySql\textbf{列类型}(字段类型)\textbf{都可以被索引}，也就是\textit{可以给任意字段设置索引}
-				\item 大大加快数据的查询速度
-			\end{itemize}
 			
-		\subparagraph{缺点}
-			\begin{itemize}[itemindent = 1em]
-				\item 创建索引和维护索引要耗费时间，并且随着数据量的增加所耗费的时间也会增加
-				\item 索引也需要占空间
-				\item 当对表中的数据进行增加、删除、修改时，索引也需要动态的维护，降低了数据的维护速度。
-			\end{itemize}
+			\begin{figure}[H]
+				\centering
+				\includegraphics[width=13cm,height=5cm]{index}
+				\caption{索引后的表样例}
+			\end{figure}
 			
-		\subparagraph{使用原则}
-			通过上面说的优点和缺点，我们应该可以知道，并不是每个字段度设置索引就好，也不是索引越多越好，而是需要自己合理的使用。
-			\begin{itemize}[itemindent = 1em]
-				\item \textbf{对经常更新的表}就\textit{避免对其进行过多的索引}，对经常用于查询的字段应该创建索引
-				\item \textbf{数据量小的表最好不要使用索引}，因为由于数据较少，可能查询全部数据花费的时间比遍历索引的时间还要短，索引就可能不会产生优化效果
-				\item \textbf{在一同值少的列上(字段上)不要建立索引}，比如\textit{在学生表的"性别"字段上只有男，女两个不同值}。相反的，在一个字段上不同值较多可是建立索引
-			\end{itemize}
+			加了索引后，就不用一行行的搜索整个表了，我们可以使用这个索引。假设，我们要找处公司编号为13 的所有行，我们开始扫描索引，便会找到3个属于该公司的值，然后会找到到达公司编号为14的索引值，该值比我们正查找的值要大一点，由于索引值是有序的，因此当我们独到那条14的索引行时，我们便知道无法找到更多与13匹配的内容了，于是可以退出查找过程，当然这个索引的查找方法可以使用BTREE 和 HASH进行优化加速。
 			
+			
+			对于不同的MySQL存储引擎，索引的具体实现细节会有所不同。
+			
+			对于MyISAM表，\textbf{其数据行保留在数据文件里，而索引值则保留在索引文件里}。一个表可以有多个索引，但它们都存在一个索引文件里。索引文件里的每一个索引都由一组有序的关键字行构成，这个组关键字行主要用于快速访问数据文件。
+			
+			对于Innodb， 并没有按照上面的方法将行和索引分开放置，尽管它也是把索引值当作是一组有序值。默认情况下，InnoDB 只使用一个表空间，在这个表空间的内部，管理着所有InnoDB 表的数据存储和索引存储。 可以配置InnoDB, 让它创建的每个表都有自己的表空间。但是即使如此，\textbf{给定表的数据和索引也同样保存在同一个表空间文件里}。
+			
+	
 	\section{索引的分类}
 		\subparagraph{存储引擎支持类型}
 			索引是在存储引擎中实现的，也就是说不同的存储引擎，会使用不同的索引
@@ -1616,89 +1621,187 @@ select * from class2;
 		
 			\textbf{联合索引左侧字段用了范围查询，则其他字段无法用上}。
 			
-	\section{创建表添加索引}
-		\subparagraph{创建普通索引}
-			\begin{lstlisting}
-// 方式一
-CREATE TABLE book　(
-bookid INT NOT NULL,　　　　　　　　　　　　　　　
-bookname VARCHAR(255) NOT NULL,　　　　　　　　　　 
-authors VARCHAR(255) NOT NULL,　　　　　　　　　　　 
-info VARCHAR(255) NULL,　　　　　　　　　　　　　　　　
-comment VARCHAR(255) NULL,　　　　　　　　　　　　　
-year_publication YEAR NOT NULL,　　　　　　　　　　　
-INDEX(year_publication)　　　　　　　　　　　　　　　
-);
-
-// 方式二
-CREATE TABLE book　(
-bookid INT NOT NULL,　　　　　　　　　　　　　　　
-bookname VARCHAR(255) NOT NULL,　　　　　　　　　　 
-authors VARCHAR(255) NOT NULL,　　　　　　　　　　　 
-info VARCHAR(255) NULL,　　　　　　　　　　　　　　　　
-comment VARCHAR(255) NULL,　　　　　　　　　　　　　
-year_publication YEAR NOT NULL,　　　　　　　　　　　
-KEY(year_publication)　　　　　　　　　　　　　　　
-);　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　
-			\end{lstlisting}
-		\subparagraph{创建唯一索引}
-			\begin{lstlisting}
-CREATE TABLE t1
-(
-id INT NOT NULL,
-name CHAR(30) NOT NULL,
-UNIQUE INDEX UniqIdx(id)
-);　
-			\end{lstlisting}
-		\subparagraph{创建主键索引}
-			\begin{lstlisting}
-CREATE TABLE t2
-(
-	id INT NOT NULL,
-	name CHAR(10),
-	PRIMARY KEY(id)
-);
-			\end{lstlisting}
 		
-		\subparagraph{创建组合索引}
-			\begin{lstlisting}
-CREATE TABLE t3
-(
+		
+			
+	\section{优点、缺点和使用原则}
+		\subparagraph{优点}
+			\begin{itemize}[itemindent = 1em]
+				\item 所有的MySql\textbf{列类型}(字段类型)\textbf{都可以被索引}，也就是\textit{可以给任意字段设置索引}
+				\item 大大加快数据的查询速度
+			\end{itemize}
+			
+		\subparagraph{缺点}
+			\begin{itemize}[itemindent = 1em]
+				\item 创建索引和维护索引要耗费时间，并且随着数据量的增加所耗费的时间也会增加，表的索引越多，需要做出的更改就越多。
+				\item 索引也需要占空间
+				\item 当对表中的数据进行增加、删除、修改时，索引也需要动态的维护，降低了数据的维护速度，降低了大部分与写入相关的操作的速度。
+			\end{itemize}
+			
+		\subparagraph{使用原则}
+			通过上面说的优点和缺点，我们应该可以知道，并不是每个字段度设置索引就好，也不是索引越多越好，而是需要自己合理的使用。
+			\begin{itemize}[itemindent = 1em]
+				\item \textbf{对经常更新的表}就\textit{避免对其进行过多的索引}，对经常用于查询的字段应该创建索引
+				\item \textbf{数据量小的表最好不要使用索引}，因为由于数据较少，可能查询全部数据花费的时间比遍历索引的时间还要短，索引就可能不会产生优化效果
+				\item \textbf{在一同值少的列上(字段上)不要建立索引}，比如\textit{在学生表的"性别"字段上只有男，女两个不同值}。相反的，在一个字段上不同值较多可是建立索引
+			\end{itemize}
+	
+	
+	
+	\section{挑选索引}
+		\begin{itemize}
+			\item 为用于搜索、排序、或分组 的列创建索引。
+			
+				最佳索引候选列是那些出现在WHERE 字句中的列、连接子句中的列， 或者出现在 \verb|ORDER BY|、\verb|GROUP BY| 子句中的列。
+				而那些出现在\verb|SELECT| 关键字后面的输出列表里的列，则不是很好的索引候选列。
+				
+			\item 认真考虑数据列的基数-(非重复值的个数)
+				
+				一列包含的唯一值多，重复值少，索引使用的效果也会更好。
+			
+			\item 索引短小值
+				
+				\begin{itemize}
+					\item 短小值可以让比较操作更快，从而加快索引查找速度
+					\item 短小值可以让索引短小，从而减少对磁盘的查找速度
+					\item 键缓存里索引块可以容纳更多的键值
+				\end{itemize}
+				
+				
+			\item 索引字符串值的前缀
+			
+				针对长字符串可以使用其多少前缀作为索引，以加快查找速度。
+			
+			
+			\item 利用最左前缀-(复合索引)
+				
+				当创建包含n个列的复合索引时，实际上会创建n个列组合起来的一个字符串 的索引key. 所以需要使用\textbf{最左前缀原则}，既如果没有包含其前缀的时候，是无法利用索引加速的。
+				
+				如 创建的复合索引为 \verb|1、2、3|.
+				那么索引可以搜索以下几种组合， \verb|123、12、1|， \textit{对于没有包含最左边前缀的那些搜索}，如\textit{按照2或3 来搜索}，MySQL \textbf{无法使用索引}。
+			
+			\item 不要建立过多的索引
+			
+				对表修改后，涉及到索引的更新，涉及越多，这个过程越耗时，并且索引额外需要占用空间，使得文件更快的到达了最大的文件限制。
+			
+			\item 让参与比较的索引类型保持匹配
+			
+			\item 利用慢查询日志找出哪些性能低劣的查询
+		\end{itemize}
+	
+
+	
+	\section{使用方法}	
+		\subsection{创建表添加索引}
+			\subparagraph{创建普通索引}
+				\begin{lstlisting}
+	// 方式一
+	CREATE TABLE book　(
+	bookid INT NOT NULL,　　　　　　　　　　　　　　　
+	bookname VARCHAR(255) NOT NULL,　　　　　　　　　　 
+	authors VARCHAR(255) NOT NULL,　　　　　　　　　　　 
+	info VARCHAR(255) NULL,　　　　　　　　　　　　　　　　
+	comment VARCHAR(255) NULL,　　　　　　　　　　　　　
+	year_publication YEAR NOT NULL,　　　　　　　　　　　
+	INDEX(year_publication)　　　　　　　　　　　　　　　
+	);
+	
+	// 方式二
+	CREATE TABLE book　(
+	bookid INT NOT NULL,　　　　　　　　　　　　　　　
+	bookname VARCHAR(255) NOT NULL,　　　　　　　　　　 
+	authors VARCHAR(255) NOT NULL,　　　　　　　　　　　 
+	info VARCHAR(255) NULL,　　　　　　　　　　　　　　　　
+	comment VARCHAR(255) NULL,　　　　　　　　　　　　　
+	year_publication YEAR NOT NULL,　　　　　　　　　　　
+	KEY(year_publication)　　　　　　　　　　　　　　　
+	);　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　
+				\end{lstlisting}
+			\subparagraph{创建唯一索引}
+				\begin{lstlisting}
+	CREATE TABLE t1
+	(
 	id INT NOT NULL,
 	name CHAR(30) NOT NULL,
-	age INT NOT NULL,
-	info VARCHAR(255),
-	INDEX MultiIdx(id,name,age)
-);
-			\end{lstlisting}
+	UNIQUE INDEX UniqIdx(id)
+	);　
+				\end{lstlisting}
+			\subparagraph{创建主键索引}
+				\begin{lstlisting}
+	CREATE TABLE t2
+	(
+		id INT NOT NULL,
+		name CHAR(10),
+		PRIMARY KEY(id)
+	);
+				\end{lstlisting}
 			
-			\textbf{组合索引就是遵从了最左前缀}，\textit{利用索引中最左边的列集来匹配行，这样的列集称为最左前缀}，例如，这里由id、name和age3个字段构成的索引，索引行中就按\verb|id/name/age|的顺序存放，\textbf{索引可以索引下面字段组合}\verb|(id，name，age)|、\verb|(id，name)|或者\verb|(id)|。如果要查询的字段不构成索引最左面的前缀，那么就不会是用索引，比如，age或者\verb|（name，age）|组合\textbf{就不会使用索引查询}
+			\subparagraph{创建组合索引}
+				\begin{lstlisting}
+	CREATE TABLE t3
+	(
+		id INT NOT NULL,
+		name CHAR(30) NOT NULL,
+		age INT NOT NULL,
+		info VARCHAR(255),
+		INDEX MultiIdx(id,name,age)
+	);
+				\end{lstlisting}
+				
+				\textbf{组合索引就是遵从了最左前缀}，\textit{利用索引中最左边的列集来匹配行，这样的列集称为最左前缀}，例如，这里由id、name和age3个字段构成的索引，索引行中就按\verb|id/name/age|的顺序存放，\textbf{索引可以索引下面字段组合}\verb|(id，name，age)|、\verb|(id，name)|或者\verb|(id)|。如果要查询的字段不构成索引最左面的前缀，那么就不会是用索引，比如，age或者\verb|（name，age）|组合\textbf{就不会使用索引查询}
+				
+		
+		\subsection{在已经存在的表上创建索引}
+		
+			\verb@ALTER TABLE 表名 ADD[UNIQUE|FULLTEXT|SPATIAL] [INDEX|KEY] [索引名](字段名)[ASC|DESC]@
 			
-	
-	\section{在已经存在的表上创建索引}
-	
-		\verb@ALTER TABLE 表名 ADD[UNIQUE|FULLTEXT|SPATIAL] [INDEX|KEY] [索引名](字段名)[ASC|DESC]@
+			\verb@CREATE [UNIQUE|FULLTEXT|SPATIAL] [INDEX|KEY] 索引名称 ON 表名(字段名[length])[ASC|DESC]@
+			
+			\begin{itemize}
+				\item ALTER TABLE book ADD INDEX BkNameIdx(bookname(30));
+				\item CREATE INDEX BkBookNameIdx ON book(bookname);
+			\end{itemize}
 		
-		\verb@CREATE [UNIQUE|FULLTEXT|SPATIAL] [INDEX|KEY] 索引名称 ON 表名(字段名[length])[ASC|DESC]@
+		\subsection{删除索引}
+			\begin{itemize}
+				\item ALTER TABLE 表名 DROP INDEX 索引名;
+				\item DROP INDEX 索引名 ON 表名;
+			\end{itemize}
 		
-		\begin{itemize}
-			\item ALTER TABLE book ADD INDEX BkNameIdx(bookname(30));
-			\item CREATE INDEX BkBookNameIdx ON book(bookname);
-		\end{itemize}
+		\subsection{使用索引要点}
+			\begin{itemize}
+				\item 索引可以加快对\verb|WHERE| 字句匹配的行进行搜索的速度，或者用于加快对(\verb|JOIN|)与另一个表里的行进行搜素的速度。
+				\item 对于使用\verb|MIN()| 或 \verb|MAX()| 函数的查询，MySQL 可以在不用逐行检查的情况下，快速找到索引列里最小值和最大值。
+				\item 对于\verb|ORDER BY| 或 \verb|GROUP BY| 子句，经常使用索引来高效的完成分类和分组操作。
+				\item 也会通过索引来读取查询所请求的所有信息(\textit{索引列信息})。
+			\end{itemize}
+					
 	
-	\section{删除索引}
-		\begin{itemize}
-			\item ALTER TABLE 表名 DROP INDEX 索引名;
-			\item DROP INDEX 索引名 ON 表名;
-		\end{itemize}
+	\section{索引原理}
+		\url{https://www.jianshu.com/p/fa8192853184}
 	
-	\section{索引背后的算法原理}
-		\url{http://blog.codinglabs.org/articles/theory-of-mysql-index.html}	
+		\url{http://blog.codinglabs.org/articles/theory-of-mysql-index.html}
 	
-	
-	\section{索引设计概要}
 		\url{https://draveness.me/sql-index-intro}
+		
+		\subsection{聚簇索引}
+			将数据存储与索引放到了一块，找到索引也就找到了数据
 			
+			
+			\paragraph{辅助索引}
+			
+			
+			
+			
+			
+			
+		\subsection{非聚簇索引}
+			将数据存储于索引分开结构，索引结构的叶子节点指向了数据的对应行,当需要访问数据时（通过索引访问数据），在内存中直接搜索索引，然后通过索引找到磁盘相应数据.
+		
+		\subsection{B+ 树}
+		
+		
+		
 	\section{参考}
 		\url{https://www.cnblogs.com/whgk/p/6179612.html}
 			
@@ -1765,28 +1868,540 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 2 rows in set (0.01 sec)		
 		\end{lstlisting}
 
+\chapter{锁}
+	\url{https://www.cnblogs.com/leedaily/p/8378779.html}
+	
+	\url{https://www.cnblogs.com/chenqionghe/p/4845693.html}
 
-\chapter{日志}
-	\section{bin-log}
-		MySQL的二进制日志可以说是MySQL\textbf{最重要的日志}了，它记录了所有的\textbf{DDL和DML}(除了数据查询语句)语句，\textbf{以事件形式记录，还包含语句所执行的消耗的时间}，MySQL的二进制日志是事务安全型的。
+	锁是计算机\textbf{协调多个进程}或纯线程\textbf{并发访问}某一资源的机制。在数据库中，除传统的计算资源（CPU、RAM、I/O）的争用以外，数据也是一种供许多用户共享的资源。\textit{如何保证数据并发访问的一致性、有效性是所在有数据库必须解决的一个问题，锁冲突也是影响数据库并发访问性能的一个重要因素}。从这个角度来说，锁对数据库而言显得尤其重要，也更加复杂。
+	
+	
+	对于数据库，其实就是\textbf{读写锁}的应用与协调。
+	
+	
+	\section{概述}
+		  相对其他数据库而言，MySQL的锁机制比较简单，其最显著的特点是\textbf{不同的存储引擎支持不同的锁机制}。MySQL大致可归纳为以下3种锁：
+		  
+		  \begin{itemize}
+			  	\item \textbf{表级锁}：开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高，并发度最低。
+			  	\item \textbf{行级锁}：开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低，并发度也最高。
+			  	\item \textbf{页面锁}：开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间，并发度一般
+		  \end{itemize}
+	
+	
+	\section{Mysql 表级锁-锁模式(MyISAM)}
+		MySQL表级锁有两种模式：表共享锁（\verb|Table Read Lock|）和表独占写锁（\verb|Table Write Lock|）
+	
+		\begin{itemize}
+			\item 对MyISAM的\verb|读操作|，\textit{不会阻塞其他用户对同一表的读请求，但会阻塞对同一表的写请求}；
+			\item 对MyISAM的\verb|写操作|，\textit{则会阻塞其他用户对同一表的读和写操作}；
+			\item MyISAM表的读操作和写操作之间，以及写操作\textbf{之间是串行的}。
+		\end{itemize}
+
+		当一个线程\textbf{获得对一个表的写锁后}，\textit{只有持有锁线程可以对表进行更新操作}。\textit{其他线程的读、写操作都会等待，直到锁被释放为止}。
 		
-		二进制有两个最重要的使用场景: 
+		
+		MyISAM存储引擎的\textbf{读锁阻塞写例子}: 
+		一个\verb|session|使用\verb|LOCK TABLE|命令给表\verb|film_text|\textbf{加了读锁}，这个\verb|session|可以查询锁定表中的记录，但更新或访问其他表都会提示错误；同时，另外一个\verb|session|可以查询表中的记录，但更新就会出现锁等待。
+		
+		\begin{figure}[H]
+			\centering
+			\includegraphics[height=22cm]{lock}
+			\caption{锁示例}
+		\end{figure}
+		
+		\subsection{如何加 表锁}
+			MyISAM在执行查询语句（\verb|SELECT|）前，\textbf{会自动给涉及的所有表加读锁}，在执行更新操作（\verb|UPDATE、DELETE、INSERT|等）前，\textbf{会自动给涉及的表加写锁}，\textit{这个过程并不需要用户干预，因此用户一般不需要直接用LOCK TABLE命令给MyISAM表显式加锁}。
+			
+			在示例中，显式加锁基本上都是为了方便理解而已，并非必须如此。
+			
+			给\verb|MyISAM|表显示加锁，一般是为了一定程度模拟事务操作，实现对某一时间点多个表的一致性读取。例如，有一个订单表\verb|orders|，其中记录有订单的总金额\verb|total|，同时还有一个订单明细表\verb|order_detail|，其中记录有订单每一产品的金额小计\verb|subtotal|，假设我们需要检查这两个表的金额合计是否相等，可能就需要执行如下两条\verb|SQL|：
+			
+			\begin{lstlisting}
+	SELECT SUM(total) FROM orders;
+	SELECT SUM(subtotal) FROM order_detail;
+			\end{lstlisting}
+			
+			这时，如果不先给这两个表加锁，就可能产生错误的结果，因为第一条语句执行过程中，\verb|order_detail|表可能已经发生了改变。因此，正确的方法应该是：
+			
+			\begin{lstlisting}
+	LOCK tables orders read local,order_detail read local;
+	SELECT SUM(total) FROM orders;
+	SELECT SUM(subtotal) FROM order_detail;
+	Unlock tables;	
+			\end{lstlisting}
+			
+			要特别说明以下两点内容。
+			
 			\begin{itemize}
-				\item 其一：MySQL Replication\textbf{在Master端开启binlog}，\textit{Master把它的二进制日志传递给slaves}来达到master-slave数据一致的目的。 
-				\item 其二：自然就是数据恢复了，通过使用mysqlbinlog工具来使恢复数据。
-			\end{itemize}    
-		    
-		\subparagraph{参考}
-			\url{https://www.cnblogs.com/martinzhang/p/3454358.html}
+				\item 上面的例子在\verb|LOCK TABLES|时加了‘\verb|local|’选项，其作用就是在满足\verb|MyISAM|表并发插入条件的情况下，允许其他用户在表尾插入记录
+				\item 在用\verb|LOCK TABLES|\textbf{给表显式加表锁是时，必须同时取得所有涉及表的锁}，并且MySQL支持锁升级。\textbf{也就是说，在执行LOCK TABLES后，只能访问显式加锁的这些表，不能访问未加锁的表}；同时，如果加的是读锁，那么只能执行查询操作，而不能执行更新操作。\textit{其实，在自动加锁的情况下也基本如此}，\textbf{MyISAM总是一次获得SQL语句所需要的全部锁}。这也正是MyISAM表不会出现死锁（\verb|Deadlock Free|）的原因
+			\end{itemize}
+			
+			可以通过检查\verb|table_locks_waited| 和 \verb|table_locks_immediate| 状态变量来分析系统上的表锁定争夺
+			
+			\verb|show status like 'table%';|
+			
+		\subsection{并发锁}
+			上文提到过\verb|MyISAM|表的读和写是串行的，但这是就总体而言的。在一定条件下，\verb|MyISAM|表也支持查询和插入操作的并发进行。 \verb|MyISAM|存储引擎有一个系统变量\verb|concurrent_insert|，专门用以控制其并发插入的行为，其值分别可以为0、1或2。
+			
+			\begin{itemize}
+				\item 当\verb|concurrent_insert|设置为0时，不允许并发插入。
+				\item 当\verb|concurrent_insert|设置为1时，如果MyISAM表中没有空洞（即表的中间没有被删除的行），\textbf{MyISAM允许在一个进程读表的同时，另一个进程从表尾插入记录}。这也是MySQL的默认设置。
+				\item 当\verb|concurrent_insert|设置为2时，\textbf{无论MyISAM表中有没有空洞，都允许在表尾并发插入记录}。
+			\end{itemize}
+			
+			在下面的例子中，\verb|session_1|获得了一个表的\verb|READ LOCAL|锁，该线程可以对表进行查询操作，但不能对表进行更新操作；其他的线程（\verb|session_2|），虽然不能对表进行删除和更新操作，但却可以对该表进行并发插入操作，这里假设该表中间不存在空洞。
+			
+			MyISAM存储引擎的读写（INSERT）并发例子：
+			\begin{figure}[H]
+				\centering
+				\includegraphics[width=13cm, height=17cm]{lock2}
+				\caption{锁示例}
+			\end{figure}		
+			
+			
+			可以利用\verb|MyISAM|存储引擎的并发插入特性，来解决应 用中对同一表查询和插入的锁争用。例如，将\verb|concurrent_insert|系统变量设为2，总是允许并发插入；同时，通过定期在系统空闲时段执行 \verb|OPTIMIZE TABLE|语句来整理空间碎片，收回因删除记录而产生的中间空洞
+			
+		\subsection{锁调度}
+			\textit{MyISAM存储引擎的读锁和写锁是互斥的，读写操作是串行的}。那么，一个进程请求某个 MyISAM表的读锁，同时另一个进程也请求同一表的写锁，MySQL如何处理呢？\textbf{答案是写进程先获得锁}。不仅如此，\textbf{即使读请求先到锁等待队列，写请求后 到，写锁也会插到读锁请求之前}！这是因为MySQL认为写请求一般比读请求要重要。这也正是MyISAM表不太适合于有大量更新操作和查询操作应用的原 因，因为，大量的更新操作会造成查询操作很难获得读锁，从而可能永远阻塞。这种情况有时可能会变得非常糟糕！幸好我们可以通过一些设置来调节MyISAM 的调度行为。
+		
+			\begin{itemize}
+				\item 通过指定启动参数\verb|low-priority-updates|，使MyISAM引擎默认给予读请求以优先的权利。
+				\item 通过执行命令\verb|SET LOW_PRIORITY_UPDATES=1|，使该连接发出的更新请求优先级降低。
+				\item 通过指定\verb|INSERT|、\verb|UPDATE|、\verb|DELETE|语句的\verb|LOW_PRIORITY|属性，降低该语句的优先级。
+			\end{itemize}
+			
+			虽然上面3种方法都是\textbf{要么更新优先，要么查询优先}的方法，但还是可以用其来解决查询相对重要的应用（如用户登录系统）中，\textit{读锁等待严重}的问题。
+			 
+			另外，MySQL也提供了一种折中的办法来调节读写冲突，即给系统参数\verb|max_write_lock_count|设置一个合适的值，\textit{当一个表的写锁达到这个值后，MySQL就暂时将写请求的优先级降低，给读进程一定获得锁的机会}。
+			
+			上面已经讨论了写优先调度机制带来的问题和解决办法。这 里还要强调一点：一些需要长时间运行的查询操作，也会使写进程“饿死”！因此，应用中应尽量避免出现长时间运行的查询操作，\textbf{不要总想用一条SELECT语 句来解决问题}，\textit{因为这种看似巧妙的SQL语句，往往比较复杂，执行时间较长}，\textbf{在可能的情况下可以通过使用中间表等措施对SQL语句做一定的“分解”，使每 一步查询都能在较短时间完成，从而减少锁冲突}。如果复杂查询不可避免，应尽量安排在数据库空闲时段执行，比如一些定期统计可以安排在夜间执行。
+			
+		
+	\section{Mysql 行级锁、表级锁-锁模式(InnoDB)}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=15cm,height=7cm]{Index2}
+			\caption{InnoDB 加锁主要逻辑}
+		\end{figure}
 	
-		\subsection{GTID}	
+		InnoDB与MyISAM的最大不同有两点：一是\textbf{支持事务（TRANSACTION）}；二是\textbf{采用了行级锁}。行级锁和表级锁本来就有许多不同之处，另外，事务的引入也带来了一些新问题。
+		
+		\subsection{事务及其ACID属性}
+			事务是\textbf{由一组SQL语句组成的逻辑处理单元}，事务具有4属性，通常称为事务的ACID属性。
+			
+			\begin{itemize}
+				\item \textbf{原子性（Actomicity）}：事务是一个原子操作单元，\textit{其对数据的修改，要么全都执行，要么全都不执行}。
+				\item \textbf{一致性（Consistent）}：在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以操持完整性；\textit{事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的}。
+				\item \textbf{隔离性（Isolation）}：数据库系统提供一定的隔离机制，保证事务在不受外部并发操作影响的“独立”环境执行。这意味着\textit{事务处理过程中的中间状态对外部是不可见的}，反之亦然。
+				\item \textbf{持久性（Durable）}：事务完成之后，它\textbf{对于数据的修改是永久性的}，即使出现系统故障也能够保持。
+			\end{itemize}
+		
+		
+		\subsection{并发事务带来的问题}
+			相对于串行处理来说，并发事务处理能大大增加数据库资源的利用率，提高数据库系统的事务吞吐量，从而可以支持可以支持更多的用户。但并发事务处理也会带来一些问题，主要包括以下几种情况.
+			
+			\begin{itemize}
+				\item \textbf{更新丢失（Lost Update）}：当两个或多个事务选择同一行，然后基于最初选定的值更新该行时，由于每个事务都不知道其他事务的存在，就会发生丢失更新问题——\textbf{最后的更新覆盖了其他事务所做的更新}。例如，两个编辑人员制作了同一文档的电子副本。每个编辑人员独立地更改其副本，然后保存更改后的副本，这样就覆盖了原始文档。最后保存其更改保存其更改副本的编辑人员覆盖另一个编辑人员所做的修改。\textit{如果在一个编辑人员完成并提交事务之前，另一个编辑人员不能访问同一文件，则可避免此问题}。
+				\item \textbf{脏读（Dirty Reads）}：一个事务正在对一条记录做修改，\textbf{在这个事务并提交前}，这条记录的数据就处于不一致状态；这时，\textit{另一个事务也来读取同一条记录，如果不加控制，第二个事务读取了这些“脏”的数据，并据此做进一步的处理，就会产生未提交的数据依赖关系}。这种现象被形象地叫做“脏读”。
+				\item \textbf{不可重复读（Non-Repeatable Reads）}：一个事务在读取某些数据已经发生了改变、或某些记录已经被删除了！这种现象叫做“不可重复读”。
+				\item \textbf{幻读（Phantom Reads）}：一个事务\textit{按相同的查询条件重新读取}以前检索过的数据，\textit{却发现}其他事务\textit{插入了满足其查询条件的新数据}，这种现象就称为“幻读”。
+			\end{itemize}
+		
+		
+		\subsection{事务隔离级别}
+			在并发事务处理带来的问题中，“更新丢失”通常应该是完全避免的。但防止更新丢失，并不能单靠数据库事务控制器来解决，需要应用程序对要更新的数据加必要的锁来解决，因此，\textbf{防止更新丢失应该是应用的责任}。
+			
+			\textit{“脏读”、“不可重复读”和“幻读”}，其实\textbf{都是数据库读一致性问题}，必须由数据库提供一定的事务隔离机制来解决。数据库实现事务隔离的方式，基本可以分为以下两种。
+			
+			\begin{itemize}
+				\item 一种是\textbf{在读取数据前，对其加锁，阻止其他事务对数据进行修改}。
+				\item 一种是\textbf{不用加任何锁}，\textit{通过一定机制生成一个数据\underline{请求时间点}的一致性\underline{数据快照}（Snapshot），并用这个快照来提供一定级别（语句级或事务级）的一致性读取}。从用户的角度，好像是数据库可以提供同一数据的多个版本，因此，\textbf{这种技术叫做数据多版本并发控制}（\textbf{Multi-Version Concurrency Control}，简称\verb|MVCC|或MCC），也经常称为\textbf{多版本数据库}。
+			\end{itemize}
+			
+			\paragraph{MVCC}
+				\url{https://blog.csdn.net/w2064004678/article/details/83012387}
+				
+			在MVCC并发控制中，读操作可以分成两类：\textbf{快照读 (snapshot read)}与\textbf{当前读 (current read)}。
+			\begin{itemize}
+				\item \textbf{快照读}，读取的是记录的可见版本 (有可能是历史版本)，\textbf{不用加锁}。
+				\item \textbf{当前读}，读取的是记录的\textit{最新版本}，并且，当前读返回的记录，\textbf{都会加上锁}，保证其他事务不会再并发修改这条记录。
+			\end{itemize}
+			
+			
+			在一个支持MVCC并发控制的系统中，哪些读操作是快照读？哪些操作又是当前读呢？以MySQL InnoDB为例：
+			
+			\paragraph{快照读}
+				简单的\verb|select|操作，属于快照读，不加锁。(当然，也有例外)
+				
+				\verb|select * from table where ?; |
+				
+			\paragraph{当前读}
+				\textit{特殊的读操作}，\textit{插入/更新/删除}操作，属于当前读，\textbf{需要加锁}。
+				
+				下面语句都属于当前读，读取记录的最新版本。并且，读取之后，还需要保证其他并发事务不能修改当前记录，对读取记录加锁。其中，除了第一条语句，对读取记录加S锁 (共享锁)外，其他的操作，都加的是X锁 (排它锁)。
+				
+				\begin{lstlisting}
+	select * from table where ? lock in share mode;
+	select * from table where ? for update;
+	insert into table values (…);
+	update table set ? where ?;
+	delete from table where ?;			
+				\end{lstlisting}
+				
+			
+			\paragraph{事务隔离级别}
+				
+				数据库的\textit{事务隔离越严格，并发副作用越小}，但付出的代价也就越大，因为\textbf{事务隔离实质上就是使事务在一定程度上 “串行化”进行}，这显然与“并发”是矛盾的。\textit{同时，不同的应用对读一致性和事务隔离程度的要求也是不同的，比如许多应用对“不可重复读”和“幻读”并不敏 感，可能更关心数据并发访问的能力}。
+				
+				为了解决“隔离”与“并发”的矛盾，ISO/ANSI SQL92定义了4个事务隔离级别，每个级别的隔离程度不同，允许出现的副作用也不同，应用可以根据自己的业务逻辑要求，通过选择不同的隔离级别来平衡 “隔离”与“并发”的矛盾。下表很好地概括了这4个隔离级别的特性。
+				\begin{table}[H]
+					\centering
+					\caption{隔离级别}
+					\begin{tabular}{p{5cm}<{\centering} | p{5cm}<{\centering} | p{1cm}<{\centering} |p{2.5cm}<{\centering} |p{1cm}<{\centering}}
+						\toprule
+						\diagbox[width=5cm,trim=l]{隔离级别}{允许的并发副作用}	& 读数据一致性 & 脏读 & 不可重复读 & 幻读\\
+						\midrule
+						未提交读 Read uncommitted &  最低级别,只能保证不读取物理上损坏的数据 & 是 & 是 & 是\\
+						\hline
+						已提交读 Read committed &  语句级 & 否 & 是 & 是 \\
+						\hline
+						可重复读 Repeatable read &  事务级 & 否 & 否 & 是 \\
+						\hline
+						可序列化 Serializable &  最高级别，事务级 & 否 & 否 & 否\\
+						\bottomrule
+					\end{tabular}
+				\end{table}
+		
+		\subsection{InnoDB的行锁模式及加锁方法}
+			\paragraph{锁分类}
+			
+				\subparagraph{行锁}
+					InnoDB实现了以下两种类型的\textbf{行锁}。同样，数据库的锁就是读写锁的应用与管理。
+		
+					\begin{itemize}[itemindent = 1em]
+						\item \textbf{共享锁（S）：又称读锁}。允许一个事务去读一行，阻止其他事务获得相同数据集的排他锁。若事务T对数据对象A加上S锁，则事务T可以读A但不能修改A，其他事务只能再对A加S锁，而不能加X锁，直到T释放A上的S锁。这保证了其他事务可以读A，但在T释放A上的S锁之前不能对A做任何修改。
+						\item \textbf{排他锁（X）：又称写锁}。允许获取排他锁的事务更新数据，\textit{阻止其他事务取得相同的数据集共享读锁和排他写锁}。若事务T对数据对象A加上X锁，事务T可以读A也可以修改A，其他事务不能再对A加任何锁，直到T释放A上的锁。
+					\end{itemize}
+			
+			
+					对于共享锁，\textit{就是多个事务只能读数据不能改数据}。 
+					
+					对于排他锁，我当初就犯了一个错误，\textit{以为排他锁锁住一行数据后，其他事务就不能读取和修改该行数据}，\textbf{其实不是这样的}。排他锁指的是一个事务在一行数据加上排他锁后，\textbf{其他事务不能再在其上加其他的锁}。mysql InnoDB引擎默认的修改数据语句：\textbf{update,delete,insert都会自动给涉及到的数据加上排他锁}，\textit{select语句默认不会加任何锁类型}，如果\textbf{加排他锁}可以使用select …for update语句，\textbf{加共享锁}可以使用select … lock in share mode语句。所以\textbf{加过排他锁的数据行在其他事务中是不能修改数据的}，\textit{也不能}\textbf{通过for update和lock in share mode锁的方式查询数据}，\textit{但可以}\textbf{直接通过select …from…查询数据，因为普通查询没有任何锁机制}。
+			
+				
+				\subparagraph{表锁}	
+					另外，为了允许行锁和表锁共存，实现多粒度锁机制，InnoDB还有两种内部使用的意向锁（Intention Locks），\textbf{这两种意向锁都是表锁}。
+					
+					\begin{itemize}[itemindent = 1em]
+						\item \textbf{意向共享锁（IS）}：事务打算给数据行加共享锁，事务在给一个数据行加共享锁前必须先取得该表的IS锁。
+						\item \textbf{意向排他锁（IX）}：事务打算给数据行加排他锁，事务在给一个数据行加排他锁前必须先取得该表的IX锁。
+					\end{itemize}
+				
+				
+					InnoDB行锁模式兼容性列表: 
+					
+					\begin{table}[H]
+						\centering
+						\caption{行锁模式兼容性}
+						\begin{tabular}{p{5cm}<{\centering} | p{1cm}<{\centering} | p{1cm}<{\centering} |p{1cm}<{\centering} |p{1cm}<{\centering}}
+							\toprule
+							\diagbox[width=5cm,trim=l]{当前锁模式}{是否兼容/请求锁模式}	& X & IX & S & IS \\
+							\midrule
+								X	 & 冲突  &  冲突& 冲突 & 冲突 \\
+							\hline
+							 	IX & 冲突  & 兼容 &冲突  &  兼容\\
+							\hline
+								S &  冲突 & 冲突 & 兼容 & 兼容 \\
+							\hline
+								IS &  冲突 & 兼容 & 兼容 & 兼容 \\
+							\bottomrule
+						\end{tabular}
+					\end{table}		
+					
+		  			如果一个\textbf{事务请求的锁模式}与\textbf{当前的锁}\underline{兼容}，InnoDB\textbf{就请求的锁授予该事务}；反之，如果两者两者不兼容，\textbf{该事务就要等待锁释放}。	
+					
+					\textbf{意向锁是InnoDB自动加的，不需用户干预}。对于\verb|UPDATE、DELETE和INSERT|语句，InnoDB\textbf{会自动}给涉及数据集\textbf{加排他锁（X)}；对于普通SELECT语句，InnoDB不会加任何锁。 
+				
+				\subparagraph{显式加锁}
+					事务可以通过以下语句显式给记录集加共享锁或排他锁：
+					\begin{itemize}[itemindent = 1em]
+						\item \textbf{共享锁（S）}：\verb|SELECT * FROM table_name WHERE ... LOCK IN SHARE MODE|
+						\item \textbf{排他锁（X）}：\verb|SELECT * FROM table_name WHERE ... FOR UPDATE|
+					\end{itemize}
+			
+					用\verb|SELECT ... IN SHARE MODE|获得\textbf{共享锁}，\textit{主要用在需要数据依存关系时来确认某行记录是否存在，并确保没有人对这个记录进行UPDATE或者DELETE操作}。但是如果当前事务也需要对该记录进行更新操作，则很有可能造成死锁，\textit{对于锁定行记录后需要进行更新操作的应用，应该使用SELECT… FOR UPDATE方式获得排他锁}。
+		
+			\paragraph{获取InonoD行锁争用情况}
+				可以通过检查\verb|InnoDB_row_lock|状态变量来分析系统上的行锁的争夺情况.
+				
+				\verb|show status like 'innodb_row_lock%';|
+			
+				\textbf{如果发现锁争用比较严重}，如\verb|InnoDB_row_lock_waits|和\verb|InnoDB_row_lock_time_avg|的值比较高，还可以通过设置InnoDB Monitors来进一步观察发生锁冲突的表、数据行等，并分析锁争用的原因。
+			
+		\subsection{InnoDB行锁实现方式}
+			InnoDB\textbf{行锁}是通过给索引上的索引项加锁来实现的，这一点MySQL与Oracle不同，后者是通过在数据块中对相应数据行加锁来实现的。InnoDB这种行锁实现特点意味着：\textbf{只有通过索引条件检索数据，InnoDB才使用行级锁，否则，InnoDB将使用\underline{表锁}}！
+			
+			在实际应用中，\textit{要特别注意InnoDB行锁的这一特性，不然的话，可能导致大量的锁冲突，从而影响并发性能}。下面通过一些实际例子来加以说明。
+			
+			\subsubsection{无索引-使用表锁}
+				\begin{lstlisting}
+	create table tab_no_index(id int,name varchar(10)) engine=innodb;
+	insert into tab_no_index values(1,'1'),(2,'2'),(3,'3'),(4,'4');				
+				\end{lstlisting}
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=13cm, height=13cm]{lock-table}
+					\caption{无索引方式多进程加锁访问-类更新}
+				\end{figure}
+				
+				在上面的例子中，看起来\verb|session_1|只给一行加了排他锁，但\verb|session_2|在请求其他行的排他锁时，却出现了锁等待！\textbf{原因就是在没有索引的情况下，InnoDB只能使用表锁}.
+				
+			\subsubsection{有索引-使用行锁-增加并发量}
+				当我们\textbf{给其增加一个索引后}，InnoDB就只锁定了符合条件的行，如下例所示： 
+				\begin{lstlisting}
+	create table tab_with_index(id int,name varchar(10)) engine=innodb;
+	alter table tab_with_index add index id(id);			
+				\end{lstlisting}
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=13cm, height=15cm]{lock-row}
+					\caption{有索引方式多进程加锁访问-类更新}
+				\end{figure}
+			
+			
+			\subsubsection{行锁-使用相同索引键值得等待锁}
+				由于MySQL的行锁是\textbf{针对索引加的锁，不是针对记录加的锁}，所以虽然是\textbf{访问不同行的记录，但是如果是使用相同的索引键，是会出现锁冲突的}。应用设计的时候要注意这一点。
+			
+				\begin{lstlisting}
+	alter table tab_with_index drop index name;
+	insert into tab_with_index  values(1,'4');	
+	select * from tab_with_index where id = 1;
+	id  names
+	1 	1
+	1	4		
+				\end{lstlisting}
+				
+				InnoDB存储引擎使用相同索引键的阻塞例子
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=13cm]{lock-row2}
+					\caption{使用相同索引键-锁冲突}
+				\end{figure}
+			
+			
+			\subsubsection{行锁-使用不同的索引定位不同行也是行锁}	
+				当表有多个索引的时候，不同的事务可以使用不同的索引锁定不同的行，另外，不论是使用主键索引、唯一索引或普通索引，InnoDB都会使用行锁来对数据加锁.
+				
+				\begin{lstlisting}
+	alter table tab_with_index add index name(name);			
+				\end{lstlisting}
+			
+				InnoDB存储引擎的表使用不同索引的阻塞例子 
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=13cm]{lock-row3}
+					\caption{使用不同索引}
+				\end{figure}				
+			
+			
+			\subsubsection{是否真正使用索引}		
+				即便在条件中使用了索引字段，\textbf{但是否使用索引来检索数据是由MySQL通过判断不同执行计划的代价来决 定的}，如果MySQL认为全表扫描效率更高，比如对一些很小的表，它就不会使用索引，这种情况下InnoDB将使用表锁，而不是行锁。因此，\textbf{在分析锁冲突 时，别忘了检查SQL的执行计划}，\textit{以确认是否真正使用了索引}。 
+				
+				比如，在\verb|tab_with_index|表里的\verb|name|字段有索引，但是\verb|name|字段是\verb|varchar|类型的，检索值的数据类型与索引字段不同，\textit{虽然MySQL能够进行数据类型转换，但却不会使用索引，从而导致InnoDB使用表锁}。\textbf{通过用explain检查两条SQL的执行计划，我们可以清楚地看到了这一点}。
+				
+				\begin{lstlisting}	
+mysql> explain select * from tab_with_index where name = 1 \G
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: tab_with_index
+   partitions: NULL
+         type: ALL
+possible_keys: name
+          key: NULL
+      key_len: NULL
+          ref: NULL
+         rows: 2
+     filtered: 50.00
+        Extra: Using where
+1 row in set, 3 warnings (0.00 sec)
+
+mysql> explain select * from tab_with_index where name = '1' \G
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: tab_with_index
+   partitions: NULL
+         type: ref
+possible_keys: name
+          key: name
+      key_len: 33
+          ref: const
+         rows: 1
+     filtered: 100.00
+        Extra: NULL
+1 row in set, 1 warning (0.00 sec)	
+				\end{lstlisting}
+				
+			
+		\subsection{间隙锁(Next-Key锁)}
+			当我们\textbf{用范围条件}而\textbf{不是相等条件}检索数据，\textbf{并请求共享或排他锁时}，InnoDB会\textbf{给符合条件的}已有数据记录的 \textbf{索引项加锁}；\textit{对于键值在条件范围内但并不存在的记录}，叫做“间隙（GAP)”，InnoDB\textbf{也会对这个“间隙”加锁}，这种锁机制就是所谓的间隙锁 （Next-Key锁）。
+			
+			
+			举例来说，假如\verb|emp表|中只有\verb|101|条记录，其\verb|empid|的值分别是\verb| 1,2,…,100,101|，下面的\verb|SQL|：
+			\begin{lstlisting}
+	Select * from  emp where empid > 100 for update;		
+			\end{lstlisting}
+			
+			\textit{是一个范围条件的检索}，\verb|InnoDB|\textbf{不仅会}对符合条件的\verb|empid值为101|的记录加锁，\textbf{而且会}对\verb|empid大于101|（这些记录并不存在）的\textbf{“间隙”加锁}。
+			
+			
+			
+			\paragraph{使用间隙锁的目的}
+				
+				\begin{itemize}
+					\item 一方面是为了\textbf{防止幻读}，以满足相关隔离级别的要求,对于上面的例子，\textit{要是不使 用间隙锁，如果其他事务插入了empid大于100的任何记录，那么本事务如果再次执行上述语句，就会发生幻读}；
+					\item 一方面，是为了\textit{满足}其 \textbf{恢复} 和 \textbf{复制}的需要。
+				\end{itemize}
 	
+			很显然，在使用范围条件检索并锁定记录时，InnoDB这种加锁机制\textit{会阻塞符合条件范围内键值的并发插入，这往往会造成严重的锁等待}。因此，\textbf{在实际应用开发中，尤其是并发插入比较多的应用，我们要尽量优化业务逻辑，尽量使用相等条件来访问更新数据，避免使用范围条件}。
+			
+			
+			\paragraph{特殊情况}
+				还要特别说明的是，InnoDB除了通过范围条件加锁时使用间隙锁外，如果\textbf{使用相等条件请求给一个\underline{不存在的记录}加锁，InnoDB也会使用间隙锁}！
+				
+				下面这个例子假设\verb|emp表|中只有\verb|101|条记录，其\verb|empid|的值分别是\verb|1,2,……,100,101|。
+				
+				InnoDB存储引擎的间隙锁阻塞例子 
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=13cm]{lock-next}
+					\caption{间隙锁}
+				\end{figure}			
+				
+				
+		\subsection{什么时候使用表锁}
+			对于InnoDB表，\textit{在绝大部分情况下都应该使用行级锁}，因为\textbf{事务和行锁}往往\textit{是我们之所以选择InnoDB表的理由}。但\textbf{在个另特殊事务中，也可以考虑使用表级锁}。
+			
+			\begin{itemize}
+				\item 第一种情况是：\textbf{事务需要更新大部分或全部数据}，表又比较大，如果使用默认的行锁，不仅这个事务执行效率低，而且可能造成其他事务长时间锁等待和锁冲突，这种情况下可以考虑使用表锁来提高该事务的执行速度。
+				\item 第二种情况是：\textbf{事务涉及多个表，比较复杂，很可能引起死锁，造成大量事务回滚}。这种情况也可以考虑一次性锁定事务涉及的表，从而避免死锁、减少数据库因事务回滚带来的开销。
+			\end{itemize}
+		
+			当然，应用中\textbf{这两种事务不能太多，否则，就应该考虑使用MyISAM表}。
+			
+			在InnoDB下 ，使用表锁要注意以下两点。
+			
+			\begin{itemize}
+				\item 使用\verb|LOCK TALBES|虽然\textbf{可以给InnoDB加表级锁}，但必须说明的是，\textit{表锁不是由InnoDB存储引擎层管理的，而是由其上一层MySQL Server负责的}，仅当\verb|autocommit=0|、\verb|innodb_table_lock=1|（默认设置）时，InnoDB层才能知道MySQL加的表锁，MySQL Server才能感知InnoDB加的行锁，这种情况下，InnoDB才能自动识别涉及表级锁的死锁；否则，InnoDB将无法自动检测并处理这种死锁。
+				\item 在用\verb|LOCAK TABLES|对InnoDB锁时要注意，\textbf{要将AUTOCOMMIT设为0，否则MySQL不会给表加锁}；事务结束前，不要用\verb|UNLOCAK TABLES|释放表锁，因为\verb|UNLOCK TABLES|\textbf{会隐含地提交事务}；\verb|COMMIT|或\verb|ROLLBACK|产不能释放用\verb|LOCAK TABLES|加的表级锁，\textbf{必须用}\verb|UNLOCK TABLES|\textbf{释放表锁}，正确的方式见如下语句。
+				
+				\begin{lstlisting}
+	#例如，如果需要写表t1并从表t读，可以按如下做：	
+	SET AUTOCOMMIT=0;
+	LOCAK TABLES t1 WRITE, t2 READ, ...;
+	[do something with tables t1 and here];
+	COMMIT;
+	UNLOCK TABLES;		
+				\end{lstlisting}
+				
+			\end{itemize}
+			
+			
+		\subsection{关于死锁}
+			\verb|MyISAM|表锁是\verb|deadlock free|的，这是因为\verb|MyISAM|\textbf{总是一次性获得所需的全部锁，要么全部满足，要么等待}，因此不会出现死锁。但是在\verb|InnoDB|中，\textbf{除单个}\verb|SQL|\textbf{组成的事务外，锁是逐步获得的}，这就决定了\verb|InnoDB|发生死锁是可能的。
+	
+			\textit{发生死锁后}，\textbf{InnoDB一般都能自动检测到，并使一个事务释放锁并退回，另一个事务获得锁，继续完成事务}。	
+			\textit{但在涉及外部锁}，\textit{或涉及锁的情况下}，InnoDB\textbf{并不能完全}\textit{自动检测到死锁}，这需要通过设置锁等待超时参数\verb|innodb_lock_wait_timeout|来解决。\textit{需要说明的是，这个参数并不是只用来解决死锁问题，在并发访问比较高的情况下，如果大量事务因无法立即获取所需的锁而挂起，会占用大量计算机资源，造成严重性能问题，甚至拖垮数据库}。我们通过设置合适的锁等待超时阈值，可以避免这种情况发生。
+			
+			通常来说，死锁都是应用设计的问题，通过调整业务流程、数据库对象设计、事务大小、以及访问数据库的SQL语句，绝大部分都可以避免。
+			下面就通过实例来介绍几种避免死锁的常用方法。
+			
+			
+			\begin{enumerate}
+				\item 在应用中，\textbf{如果不同的程序会并发存取多个表，应尽量约定以相同的顺序为访问表，这样可以大大降低产生死锁的机会}。如果两个session访问两个表的顺序不同，发生死锁的机会就非常高！但如果以相同的顺序来访问，死锁就可能避免。
+				\item 在程序以批量方式处理数据的时候，如果\textbf{事先对数据排序，保证每个线程按固定的顺序来处理记录}，也可以大大降低死锁的可能。
+				\item 在事务中，\textbf{如果要更新记录，应该直接申请足够级别的锁，即排他锁}，而不应该先申请共享锁，更新时再申请排他锁，甚至死锁。
+				\item 在\verb|REPEATEABLE-READ|隔离级别下，如果两个线程同时对相同条件记录用\verb|SELECT...ROR UPDATE|加排他锁，在没有符合该记录情况下，两个线程都会加锁成功。程序发现记录尚不存在，就试图插入一条新记录，如果两个线程都这么做，就会出现死锁。这种情况下，将隔离级别改成\verb|READ COMMITTED|，就可以避免问题。
+				\item 当隔离级别为\verb|READ COMMITED|时，如果两个线程都先执行\verb|SELECT...FOR UPDATE|，\textit{判断是否存在符合条件的记录，如果没有，就插入记录}。此时，只有一个线程能插入成功，另一个线程会出现锁等待，当第1个线程提交后，第2个线程会因主键重出错，但\textbf{虽然这个线程出错了，却会获得一个排他锁}！这时如果有第3个线程又来申请排他锁，也会出现死锁。\textbf{对于这种情况，可以直接做插入操作，然后再捕获主键重异常，或者在遇到主键重错误时，总是执行ROLLBACK释放获得的排他锁}。
+			\end{enumerate}
+			
+			尽管通过上面的设计和优化等措施，可以大减少死锁，但死锁很难完全避免。因此，\textbf{在程序设计中总是捕获并处理死锁异常}是一个很好的编程习惯。
+			
+	\section{总结}
+		\subsection{MyISAM}
+			\begin{enumerate}
+				\item 共享读锁（S）之间是兼容的，但共享读锁（S）和排他写锁（X）之间，以及排他写锁之间（X）是互斥的，也就是说读和写是串行的。
+				\item 在一定条件下，MyISAM允许查询和插入并发执行，我们可以利用这一点来解决应用中对同一表和插入的锁争用问题。
+				\item MyISAM默认的锁调度机制是写优先，这并不一定适合所有应用，用户可以通过设置\verb|LOW_PRIPORITY_UPDATES|参数，或在\verb|INSERT|、\verb|UPDATE|、\verb|DELETE|语句中指定\verb|LOW_PRIORITY|选项来调节读写锁的争用。
+				\item \textbf{由于表锁的锁定粒度大，读写之间又是串行的}，因此，如果更新操作较多，MyISAM表可能会出现严重的锁等待，可以考虑采用InnoDB表来减少锁冲突。
+			\end{enumerate}
+		
+		
+		\subsection{InnoDB}
+			\begin{enumerate}
+				\item InnoDB的行锁是基于索引实现的，如果不通过索引访问数据，InnoDB会使用表锁。
+				\item InnoDB间隙锁机制，以及InnoDB使用间隙锁的原因。
+				\item 在不同的隔离级别下，InnoDB的锁机制和一致性读策略不同。
+				\item MySQL的恢复和复制对InnoDB锁机制和一致性读策略也有较大影响。
+				\item 锁冲突甚至死锁很难完全避免。
+			\end{enumerate}
+			
+			在了解InnoDB的锁特性后，用户可以通过设计和SQL调整等措施减少锁冲突和死锁，包括：
+			\begin{itemize}
+				\item 尽量使用较低的隔离级别
+				\item 精心设计索引，并尽量使用索引访问数据，使加锁更精确，从而减少锁冲突的机会。
+				\item 选择合理的事务大小，小事务发生锁冲突的几率也更小。
+				\item 给记录集显示加锁时，最好一次性请求足够级别的锁。比如要修改数据的话，最好直接申请排他锁，而不是先申请共享锁，修改时再请求排他锁，这样容易产生死锁。
+				\item 不同的程序访问一组表时，应尽量约定以相同的顺序访问各表，对一个表而言，尽可能以固定的顺序存取表中的行。这样可以大减少死锁的机会。
+				\item 尽量用相等条件访问数据，这样可以避免间隙锁对并发插入的影响。
+				\item 不要申请超过实际需要的锁级别；除非必须，查询时不要显示加锁。
+				\item 对于一些特定的事务，可以使用表锁来提高处理速度或减少死锁的可能。
+			\end{itemize}
+		
+		
+\chapter{日志}
+	
+	\begin{table}[H]
+		\centering
+		\caption{日志功能选项配置说明}
+		\begin{tabular}{p{9cm} | p{7cm}}
+			\toprule[1.5pt]
+				选项  &   用途 	\\
+			\midrule
+				\verb| general_log | &  启用\textbf{普通日志}	\\
+				\verb| general_log_file=file_name | & 生成日志文件名  	\\
+				\verb| log-bin[=file_name] | &  	启用\textbf{二进制日志} \\
+				\verb| log-bin-index=file_name | &  二进制日志索引文件	\\
+				\verb| log_error[=file_name] | &   启用\textbf{出错日志}	\\
+				\verb| log_output[=destination] | &  普通查询/慢查询 日志存在位置	\\
+				\verb| relay-log[=file_name] | &  启用\textbf{中继日志}	\\
+				\verb| relay-log-index=file_name | &  中继日志索引文件	\\
+				\verb| slow_query_log | &  启用\textbf{慢查询日志}	\\
+				\verb| slow_query_log_file=file_name | &  慢查询日志文件名	\\
+			\bottomrule[1.5pt]
+		\end{tabular}
+	\end{table}
 	
 	
 	\section{error-log}
-	
+		这种日志记录的内容包括服务器的启动和关闭、以及与问题或异常条件有关的消息。 
+		
+		如果服务器无法启动，就可以查看此类日志，它会在终止之前把消息写到出错日志，以指明出现了什么问题。
+		
+	\section{general-log}
+		常规查询日志 包含的是：与服务器操作有关的常规信息。其中包括谁连接服务器、从什么地方连接、调用了哪些语句。	
+		
+		
 	
 	\section{slow-query-log}
+		这种日志可以帮你把那些可能需要被重写，以求获得更好性能的语句识别出来。
+	
 		MySQL \textbf{慢查询日志}是指 MySQL 中\textbf{执行时间超过} \verb|long_query_time| \textbf{阀值的 SQL 语句}。
 		
 		\verb|Dumbo| 默认每天零晨 \textbf{rotate 慢查询日志}，按日期命名文件，每天一个文件，服务器上保留最近 8 天的慢查询日志文件。
@@ -1805,7 +2420,7 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 			\begin{table}[H]
 				\centering
 				\caption{慢查询日志参数}
-				\begin{tabular}{p{6cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}}
+				\begin{tabular}{p{5.5cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}|p{3cm}<{\centering}}
 					\hline
 						方法 &  MySQL默认值 &  Dumbo 默认值 & 能否自助修改\\
 					\hline
@@ -1831,9 +2446,48 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 			\begin{itemize}
 				\item \url{https://www.cnblogs.com/saneri/p/6656161.html}
 			\end{itemize}
-				
-
-
+			
+	\section{bin-log}
+		这种日志由一个或多个文件构成，\textbf{记录}由\verb@UPDATE DELETE INSERT CREATE|DROP(TABLE) GRANT@ 等语句所做的\textbf{修改}。
+		写到二进制日志里的内容都是一些\textbf{以二进制格式编码的数据修改“事件”}。 二进制日志文件都伴随有一个索引文件，其中列出了当时存在的那些二进制日志文件。
+		
+		MySQL的二进制日志可以说是MySQL\textbf{最重要的日志}了，它记录了所有的\textbf{DDL和DML}(除了数据查询语句)语句，\textbf{以事件形式记录，还包含语句所执行的消耗的时间}，MySQL的二进制日志是事务安全型的。
+		
+		二进制有两个最重要的使用场景: 
+			\begin{itemize}
+				\item 其一：MySQL Replication\textbf{在Master端开启binlog}，\textit{Master把它的二进制日志传递给slaves}来达到master-slave数据一致的目的。 
+				\item 其二：是数据恢复，通过使用mysqlbinlog工具来使恢复数据。首先，根据备份文件恢复数据库，然后，使用mysqlbinlog 将二进制日志的内容转换为文本语句，并使用备份之后修改数据库的那些语句作为客户端mysql 的输入，把数据库恢复到崩溃时的状态。
+			\end{itemize}    
+		    
+		\subparagraph{参考}
+			\url{https://www.cnblogs.com/martinzhang/p/3454358.html}		
+	
+	
+	\section{relay-log}
+		中继日志。
+		
+		如果服务器是一个复制从服务器， 它就会维护一个中继日志，其中包含的是从主服务器接收到的需要被执行的数据修改事件记录。
+		
+		中继日志文件的格式与二进制日志文件的格式相同，它有一个索引文件，其中列出的是从服务器器上存在的日志文件。
+	
+	
+	\section{redo-log}
+		\url{https://www.cnblogs.com/f-ck-need-u/archive/2018/05/08/9010872.html}
+		
+		redo log通常是物理日志，记录的是数据页的物理修改，而不是某一行或某几行修改成怎样怎样，它用来恢复提交后的物理数据页(恢复数据页，且只能恢复到最后一次提交的位置)。
+	
+	
+	\section{undo-log}
+		undo用来回滚行记录到某个版本。undo log一般是逻辑日志，根据每行记录进行记录。
+		
+	
+	\section{日志表}
+		当启用了普通查询日志或慢查询日志功能时，你可以选择让服务器把日志输出写入日志文件、写入MySQL 数据库的日志表，或同时写入这两个地方。
+		
+		如果把\verb|TABLE |作为输出目标，服务器会把日志输出写入 mysql 数据库的 \verb|general_log |和 \verb|slow_log |表。
+		
+		如果把\verb|FILE |作为输出目标，日志文件名就由全局系统变量 \verb|general_log_file| 和 \verb|slow_query_log_file| 来决定。文件位于数据目录里，默认名分别为 \verb|HOSTNAME.log| 和 \verb|HOSTNAME-slow.log|.
+		
 \chapter{存储引擎}
 	\section{InnoDB存储引擎}	
 	
@@ -1861,6 +2515,8 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 	
 	\section{集群}
 
+
+\chapter{PHP 与 MySQL}
 
 
 \chapter{MySQL 性能优化}
@@ -1923,13 +2579,12 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 			\end{itemize}
 			
 	\section{Sql 优化}	
-	
-	\section{Mysql 锁}
 		
-	\section{MySQL 复制}
-
+		
 	\section{Explain 详解}
 		\url{https://www.cnblogs.com/xuanzhi201111/p/4175635.html}
+		
+		\url{https://www.cnblogs.com/galengao/p/5780958.html}
 		
 		在日常工作中，我们会有时会开慢查询去记录一些执行时间比较久的SQL语句，找出这些SQL语句并不意味着完事了，些时我们常常用到explain这个命令来查看一个这些SQL语句的执行计划，查看该SQL语句有没有使用上了索引，有没有做全表扫描，这都可以通过explain命令来查看。
 		
@@ -1988,13 +2643,18 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 		\subsection{rows}
 			表示MySQL根据表统计信息及索引选用情况，估算的找到所需的记录所需要读取的行数
 	
+		\subsection{filtered}
+			Percentage of rows filtered by table condition
+			
+			它指\textit{返回结果的行}占\textit{需要读到的行}(rows列的值)的\textbf{百分比}。按说filtered是个非常有用的值，因为对于join操作，前一个表的结果集大小直接影响了循环的次数。但是我的环境下测试的结果却是，filtered的值一直是100\%，也就是说失去了意义。
+			
 		\subsection{总结}
 			\begin{itemize}
-				\item EXPLAIN不会告诉你关于触发器、存储过程的信息或用户自定义函数对查询的影响情况
-				\item EXPLAIN不考虑各种Cache
-				\item EXPLAIN不能显示MySQL在执行查询时所作的优化工作
-				\item 部分统计信息是估算的，并非精确值
-				\item EXPALIN只能解释SELECT操作，其他操作要重写为SELECT后查看执行计划。
+				\item EXPLAIN\textbf{不会}告诉你关于触发器、存储过程的信息或用户自定义函数对查询的影响情况
+				\item EXPLAIN\textbf{不考虑}各种Cache
+				\item EXPLAIN\textbf{不能}显示MySQL在执行查询时所作的优化工作
+				\item \textbf{部分}统计信息\textbf{是估算的}，并非精确值
+				\item EXPALIN\textbf{只能}解释\verb|SELECT操作|，其他操作要重写为SELECT后查看执行计划。
 			\end{itemize}
 			
 
@@ -2026,7 +2686,222 @@ mysql>   select * from runoob_transaction_test;   # 因为回滚所以数据没�
 	\section{E-R 图}
 
 		
+
+\chapter{MySQL 管理}
+	\section{MySQL组件}
+		\subsection{Mysql 服务器}
+			服务器主程序mysqld, 是MYSQL 数据系统的核心。 负责管理所有数据库和表。
 		
+		\subsection{Mysql 客户端}
+			\begin{itemize}
+				\item \verb|mysql| 一个交互程序，用来向服务器发送SQL语句，和查看结果。
+				\item \verb|mysqladmin| 用于完成许多任务、如关闭服务器、检查配置、在运行不正常时监视状态。
+				\item \verb|mysqldump| 用于备份数据库、或把数据库复制到另一个服务器的工具。
+				\item \verb|mysqlcheck和myisamchk| 能帮你完成表的检查、分析、优化，还能修复受损表。 主要适用于 myisam 表。
+			\end{itemize}
+		
+		\subsection{服务器语言SQL}
+		
+		\subsection{MySQL 数据目录}
+			服务器会把数据库和状态文件存储在数据目录里。 
+		
+			查看数据目录的方法：
+			\begin{itemize}[itemindent = 1em]
+				\item 在配置文件\verb|[mysqld] -> datadir=···|
+				\item 进入Mysql \verb|SHOW VARIABLES LIKE 'datadir'|
+				\item \verb|mysqladmin variables|
+			\end{itemize}
+			
+			\paragraph{数据目录结构}
+				\begin{itemize}
+					\item 每个数据库在数据目录下都对应有一个数据库目录。
+					\item 数据库里的表、视图、触发器 都对应于数据库目录中的文件。
+					\item 数据目录也可以包含其他文件，如进程id文件、服务器生成的状态文件、日志、等文件
+				\end{itemize}
+				
+			
+			\paragraph{数据访问方式}
+				服务器是访问数据库的唯一联络点，它好像是处于客户端程序和他们想要使用的数据之间的中间人。
+				
+				\begin{figure}[H]
+					\centering
+					\includegraphics[width=15cm,height=10cm]{datadir}
+					\caption{服务器控制数据目录访问的方式}
+				\end{figure}
+			
+			\paragraph{数据库在文件系统里的表示}
+				每个数据库都有其自己的数据库目录。
+				
+				\verb|show databases;| 语句可以列出位于数据目录里的目录名称。
+				
+				\verb|create database db_name| 语句会在数据目录下创建一个名为 \verb|db_name| 的数据库目录。
+			
+				\verb|drop databse db_name| 语句 则相当于执行了\verb|rm -rf datadir/db_name |.
+				
+			\paragraph{表在文件系统里的表示}
+				对于一个表，Mysql 在磁盘上至少会\textbf{使用一个文件来表示}，既\verb|.frm| 格式文件。
+				
+				服务器会负责创建\verb|.frm|文件， 而各个存储引擎会创建一些附加文件， 用于保存数据行和索引信息。这些文件的名字和结构会因存储引擎的不同而有所差异。
+				
+				在InnoDB 中，可以实现每个表一个表空间的存储模式，在这种情况下，每个InnoDB 表在数据库目录里都会有两个与表特定相关的文件。既\verb|.frm|文件 和 \textbf{包含表数据和索引的} \verb|.ibd|文件. 
+				
+				
+			\paragraph{视图和触发器 在 文件系统里的表示}
+			
+				每个视图只有一个\verb|.frm|文件，其中包含着该视图的定义和其他相关属性，该文件的名称与视图的名称保持一致。
+				
+				每个触发器存储在一个\verb|.TRG|文件里，其中包含着该触发器的定义和其他相关属性，该文件的名称与触发器\textbf{关联表的名称}保持一致。
+				如果一个表有多个触发器，那么服务器会把他们的所有定义集合存储在一个\verb|.TRG|文件里。每个触发器还有一个根据触发器名称命名的\verb|.TRN| 文件。
+			
+			
+			\paragraph{状态文件 和 日志文件}
+				数据目录还包括许多状态文件和日志文件。这些文件的默认位置为服务器的数据目录。 默认名称是从表中表示为\verb|HOSTNAME|的服务器主机名继承来的。
+				
+				二进制日志 和 中继日志 都会被创建为一组带编号的文件。
+			
+			
+			\paragraph{影响表最大长度的因素}
+				在mysql 里，表的长度是有限的，不过表的长度受很多方面的限制。除了受操作系统的限制以外，MySQL表的长度还受其自己内部限制。这些内部限制会因不同的存储引擎而有所不同。
+			
+					
+				
+			\paragraph{数据目录结构对系统性能的影响}
+				每个表在数据目录里对应的文件个数，成为性能影响的点，因为在操作这个表时，系统必须为其分配一个文件描述符。因而不同的存储引擎如InnoDB(2个) 与 Myisam(3个) 就表现的不同。
+				
+				
+		
+		\subsection{迁移MySQL 数据目录}
+			迁移方法总结
+			
+			\begin{table}[H]
+				\centering
+				\caption{迁移方法总结}
+				\begin{tabular}{p{8cm}<{\centering} | p{7cm}<{\centering}}
+					\toprule[1.5pt]
+						迁移实体  &  适用的迁移方法\\
+					\midrule
+						\textbf{整个}数据目录 & 启动选项 Or 符号链接 \\
+						\textbf{各个数据库}目录 & 符号链接 \\
+						\textbf{各个数据库表} & 符号链接 \\
+						\verb|InnoDB| 表空间文件 & 启动选项  \\
+						服务器\verb|PID文件| & 启动选项  \\
+						日志文件 & 启动选项  \\
+					\bottomrule[1.5pt]
+				\end{tabular}
+			\end{table}
+		
+				
+	\section{常规管理}
+		参考<Mysql 技术内幕-美10.2>
+		
+		\subsection{用户账户维护}
+			Mysql 上已有账户全部都列在\verb|mysql| 数据库 的 \verb|user| 表里。	
+		
+		\subsection{服务器的启动与关闭}
+			应该以root 以外的其他用户身份来运行服务器，应该对所有进程的权限进行限制，除非它真的需要root 权限(mysqld 不需要)。
+			
+			每次都应该以同一个用户身份来运行服务器。当服务器不定时以不同用户权限运行时，会出现权限不一致的问题。这时，数据目录里创建的文件和目录会拥有不同的所属模式，会导致服务器在以某个用户身份运行时无法访问某些数据库和表。只有固定以同一个用户身份运行服务器，才能避免这个问题。
+			
+			
+			\textbf{启动服务器}\verb|mysqld --verbose --help| or \verb|mysqld_safe| or \verb|mysqld.server| or \verb|mysqld_multi|
+			
+			\textbf{停止服务器}\verb|mysqladmin -p -u root shutdown| or \verb|/etc/init.d/mysql stop|
+		
+		
+		\subsection{系统变量和状态变量}
+			\paragraph{系统变量}
+			
+				\verb|show variables;|
+				
+				一个系统变量可以同时拥有全局值 和 会话值、只拥有一个全局值、或者只拥有一个会话值。
+				
+				当然还可以\textbf{利用正则查找相关的变量}，如\verb|show variables like '%log%';|。当然也可以使用 \verb|where| 语句。
+				
+				\verb|SHOW variables WHERE Variable_name LIKE '%timeout%' AND Value < 60;|
+				
+				默认情况下，\verb|SHOW VARIABLES;| 会显示各个会话变量值，要想特定地显示全局变量或会话变量，可以在语句中加上\verb|GLOBAL|或\verb|SESSION|.
+				
+				\verb|SHOW GLOBAL VARIABLES; 	SHOW SESSION VARIABLES;|
+				
+				
+				如果要查看当个变量值，可以使用语法格式  \verb|@@GLOBAL.var_name| 或\verb|@@SESSION.var_name|. 如果没有指定限定符，既\verb|@@var_name|  使用的是会话变量。这种一般配合\verb|SELECT |使用。
+				
+				
+				\verb|select @@sql_mode;|
+				
+				这些变量在系统未启动前，可以通过修改配置文件修改，但是当系统运行时，需要借助\verb|SET|来完成设置。
+				
+				\verb|SET GLOBAL var_name = value;       SET @@GLOBAL.var_name = value;|
+				
+				当然，如果没有限定符号，那么\verb|SET|语句会修改的是当前会话。
+				
+				\verb|SET var_name = value;|
+				
+			\paragraph{状态变量}用于监视服务器运作情况。
+			
+				\verb|show status;|
+						
+				状态变量只能由服务器来设置，对于用户来说，只能查看。
+				
+				
+			
+		\subsection{日志维护-管理}
+			服务器可以生成多种类型的日志，这些日志有助于诊断问题，提高性能、启用复制、恢复崩溃。
+			
+			确保最近的几个日志可以在线使用，同事还想放置日志文件无限制的增长，可以使用日志文件过期技术。
+			
+			\begin{itemize}
+				\item \textbf{日志轮换法}
+					
+					这种方法适用于文件名固定的日志文件，如出错日志文件、普通查询日志文件和慢查询日志文件。
+					
+				\item \textbf{基于使用期限的过期法}
+				
+					这种方法会把超过某个使用期限的日志文件删除掉，它适用于按编号顺序创建的日志文件。不过，如果把二进制日志用于服务器复制，就不应该使用这种技术。
+					
+				\item \textbf{与复制有关的过期法}
+				
+					如果把二进制日志文件用于服务器复制，不能基于使用期限让他们过期。只有在知道他们都一倍完全发送至所有从服务器之后，才可以让其过期。因此，这种形式的过期方法是一句哪些二进制日志文件仍在使用来决定的。
+					
+					复制从服务器会按照编号顺序来创建中继日志文件，并且会在处理完他们之后自动将其删除。为减少存储在磁盘上的中继日志信息量，可以通过减小系统变量\verb|max_relay_log_size|的值来降低日志文件的最大可允许大小。
+					
+				\item \textbf{日志表截断或轮换法}
+					
+					如果把日志信息记录到mysql 数据库的表，就可以把它们截短或者重新命名，并将其替换为空表。
+			\end{itemize}
+		
+		
+		\subsection{服务器配置和优化}
+		
+		
+		
+		
+		\subsection{管理多个服务器}
+		
+		
+		
+		\subsection{更新Mysql软件}
+	
+	
+	
+	
+	\section{数据库维护、备份、复制}
+		
+		\subsection{预防性维护}
+		
+		\subsection{数据库备份}
+			当出现严重的服务器崩溃事件时，数据库备份能起到关键的作用。在数据库崩溃之后，你肯定会希望把数据库恢复到崩溃前的状态，同时尽可能减少数据损失。
+			
+			在进行系统备份时，表所对应的文件很可能因服务器的活动而处于变化状态，因此恢复哪些文件并不能保证表的一致性。对于恢复数据库而言，mysqldump 程序生成的备份文件会更有用。
+			
+		\subsection{崩溃恢复}
+			一定要知道\textbf{如何利用备份文件}来恢复数据、以及\textbf{如何利用二进制日志}恢复最近一次备份后所发生的那些更改。
+			
+		\subsection{数据库迁移}
+			如果打算把现有的MySQL 迁移到一台速度更快的主机上，那么需要把数据库复制到另一台机器上。此过程需要熟悉整个流程的操作、以及过程的依赖条件、系统环境等。
+			
+		\subsection{数据库复制}
+			主从复制。对数据库进行备份或制作副本。
 		
 \chapter{疑难杂症}
 	\section{mysql.sock -ERROR 2002 (HY000)}

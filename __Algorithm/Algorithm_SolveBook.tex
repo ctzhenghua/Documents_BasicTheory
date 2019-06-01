@@ -3005,24 +3005,98 @@
 	
 	\subsection{解答}
 	\url{https://github.com/ctzhenghua/C-NetworkPractice-Code/blob/master/DataStructure/Sort/SelectSort.cc}
-		
+
+\newpage		
 \section{快速排序}
 
 	快速排序是\textbf{找出一个元素}（理论上可以随便找一个）\textbf{作为基准(pivot)},然后对数组进行分区操作,\textbf{使基准左边元素的值都不大于基准值,基准右边的元素值 都不小于基准值}，如此作为基准的元素调整到排序后的正确位置。递归快速排序，将其他n-1个元素也调整到排序后的正确位置。最后每个元素都是在排序后的正 确位置，排序完成。所以快速排序算法的核心算法是分区操作，即如何调整基准的位置以及调整返回基准的最终位置以便分治递归。
 	
+	\subsection{核心功能分责}
+		\paragraph{partition()}
+			\begin{itemize}
+				\item 在给定序列(\verb|low, high|)，找切割位置，既\verb|pivot| 最终位置。
+				\item 填充\verb|pivot|位置
+			\end{itemize}
+		
+		\paragraph{sort()}
+			切分\textbf{序列}， 这是改非递归版本的核心，既将填充功能分出，然后用栈模拟出 序列的变化。
+		
+		
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=13cm,height=4cm]{quickSort}
+			\caption{非递归思路剖析}
+		\end{figure}
+		
 	\subsection{解答}
-		\url{https://github.com/ctzhenghua/C-NetworkPractice-Code/blob/master/DataStructure/Sort/QuickSort.cc}
+		\url{https://github.com/ctzhenghua/C-NetworkPractice-Code/DataStructure/Sort/QuickSort.cc}
+		
+		非递归版本：\url{http://www.cnblogs.com/zhangchaoyang/articles/2234815.html}
+		
+		\begin{lstlisting}
+/**把数组分为两部分，轴pivot左边的部分都小于轴右边的部分**/
+template <typename Comparable>
+int partition(vector<Comparable> &vec,int low,int high){
+    Comparable pivot=vec[low];  //任选元素作为轴，这里选首元素
+    while(low<high){
+        while(low<high && vec[high]>=pivot)
+            high--;
+        vec[low]=vec[high];
+        while(low<high && vec[low]<=pivot)
+            low++;
+        vec[high]=vec[low];
+    }
+    //此时low==high
+    vec[low]=pivot;
+    return low;
+}
+//其实就是用栈保存每一个待排序子串的首尾元素下标，下一次while循环时取出这个范围，对这段子序列进行partition操作		
+void quicksort2(vector<Comparable> &vec,int low,int high){
+    stack<int> st;
+    if(low>=high) return;
+    int mid=partition(vec,low,high);
+    if(low<mid-1){
+        st.push(low);
+        st.push(mid-1);
+    }
+    if(mid+1<high){
+        st.push(mid+1);
+        st.push(high);
+    }
+    while(!st.empty()){
+        int q=st.top();
+        st.pop();
+        int p=st.top();
+        st.pop();
+        mid=partition(vec,p,q);
+        if(p<mid-1){
+            st.push(p);
+            st.push(mid-1);
+        }
+        if(mid+1<q){
+            st.push(mid+1);
+            st.push(q);
+        }       
+    }
+}		
+		\end{lstlisting}
+		
 \section{插入排序}
 	
 	插入即表示将一个新的数据插入到一个有序数组中，并继续保持有序。例如有一个长度为N的无序数组，进行N-1次的插入即能完成排序；第一次，数组第1个数认为是有序的数组，将数组第二个元素插入仅有1个有序的数组中；第二次，数组前两个元素组成有序的数组，将数组第三个元素插入由两个元素构成的有序数组中......第N-1次，数组前N-1个元素组成有序的数组，将数组的第N个元素插入由N-1个元素构成的有序数组中，则完成了整个插入排序。
 	
 	\subsection{解答}
 	
-\section{归并}
+\section{归并排序}
+	\url{https://www.cnblogs.com/skywang12345/p/3602369.html}
 	
-	\url{http://www.cnblogs.com/jingmoxukong/p/4308823.html}
+	归并排序的思想就是把前一段排序，后一段排序，然后再合并两个有序数组。 而分到每个数组只有一个元素为止，然后从底开始回溯。
 	
-	归并排序的思想就是把前一段排序，后一段排序，然后再整体排序。
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=15cm,height=8cm]{mergeSort}
+		\caption{归并排序图例}
+	\end{figure}
 	
 	归并排序其实要做两件事：
 	\begin{enumerate}[itemindent = 2em]
@@ -3031,7 +3105,7 @@
 	\end{enumerate}
 	
 	\subsection{如何合并}
-		在每次合并过程中，都是对两个有序的序列段进行合并，然后排序。	这两个有序序列段分别为 \verb|R[low, mid]| 和 \verb|R[mid+1, high]|。
+		在每次合并过程中，都是对两个有序的序列段进行合并(\verb|有序数组合并|)。	这两个有序序列段分别为 \verb|R[low, mid]| 和 \verb|R[mid+1, high]|。
 		先将他们合并到一个局部的暂存数组\verb|R2|中，带合并完成后再将\verb|R2|复制回\verb|R|中。
 	
 		为了方便描述，我们称 \verb|R[low, mid]| 第一段，\verb|R[mid+1, high]| 为第二段。
@@ -3082,6 +3156,109 @@
 		}  
 	}  
 		\end{lstlisting}
+		
+	
+	
+	\subsection{非递归版本}
+		\url{https://www.jianshu.com/p/feeaa4296629}
+		
+		\begin{lstlisting}
+#define MAXSIZE 100 //用于要排序数组的最大值 
+
+typedef struct      //定义一个顺序表结构 
+{
+    int r[MAXSIZE+1];   //用于存储要排序数组，r[0]用作哨兵或者临时变量 
+    int length;         //用于存储顺序表的最大长度 
+}SqList;
+
+//归并排序最主要实现函数
+//将有序的S[low..m]和S[m+1..high]归并到有序的T[low..high]中
+void Merge(int *S, int *T, int low, int m, int high)
+{//j在[m+1,high]区间递增，k用于目标T的下标递增, l是辅助变量
+    int j, k, l;
+    
+    for (k = low,j = m+1; low <= m && j <= high; k++)   //将S中的元素由小到大归并到T中 
+    {
+        if (S[low] < S[j])
+            T[k] = S[low++];    //此处先执行T[k] = S[low],然后low++;
+        else
+            T[k] = S[j++];      //同理
+    }
+    
+    //for循环过后，可能有j>high 或者 low>m，故分情况处理
+    if (low <= m)
+    {
+        for (l = 0; l <= m-low; l++)
+            T[k+l] = S[low+l];      //将剩余的S[low..m]复制到T中 
+    }
+    
+    if (j <= high)
+    {
+        for (l = 0; l <= high-j; l++)
+            T[k+l] = S[j+l];        //将剩余的S[j..high]复制到T中
+    }
+}
+
+//将S中相邻长度为s的子系列两两归并到T中
+void MergePass(int *S, int *T, int s, int length)
+{
+    int i = 1;  //r[0]用作哨兵或者临时变量
+    int j;
+    
+    while (i <= length-2*s+1)   //length-i+1(未合并元素) >= 2s 
+    {       
+        Merge(S, T, i, i+s-1, i+2*s-1);
+        i= i+2*s;   //自增的下一个元素的起始点
+    }
+    if (i< length-s+1)  //归并最后两个序列 
+        Merge(S, T, i, i+s-1, length);
+    else
+        for (j = i; j <= length; j++)
+            T[j] = S[j];
+}
+
+
+void MergeSort(SqList *L)
+{   
+    //申请额外的空间，由于r[0]为哨兵，所以这里长度要+1
+    int* TR = (int *)malloc((L->length+1)*sizeof(int));
+    int k = 1;/*k用来表示每次k个元素归并*/
+    
+    while (k < L->length)
+    {
+        //k每次乘以2是遵循1->2->4->8->16...的二路归并元素个数的原则
+        MergePass(L->r, TR, k, L->length);/*先借助辅助空间归并*/
+        k *= 2;
+        MergePass(TR, L->r, k, L->length);/*再从辅助空间将排过序的序列归并回原数组*/
+        k *= 2;
+    }
+    free(TR);//释放内存
+    TR=NULL;
+}
+
+
+int main()
+{
+    int i;
+    int array[] = {39,80,76,41,13,29,50,78,30,11,100,7,41,86};
+    SqList L;
+    L.length = sizeof(array)/sizeof(array[0]);  //获取数组长度 
+ 
+    for(i=0;i<L.length;i++)
+        L.r[i+1]=array[i];  //把数组存入顺序表结构 
+
+    MergeSort(&L);
+    
+    for(i=0;i<L.length;i++)     //输出排序后的数组 
+        printf("%d ",L.r[i+1]);
+
+    return 0;
+}		
+		\end{lstlisting}	
+	
+	
+	
+\newpage	
 \section{堆}
 	\url{http://www.cnblogs.com/mengdd/archive/2012/11/30/2796845.html}
 	
@@ -3090,7 +3267,7 @@
 			\item  调整好后，根与当前剩下未确定的最后一个进行位置交换
 		\end{itemize}
 	
-		\begin{figure}[h]
+		\begin{figure}[H]
 			\centering
 			\includegraphics*[scale = 0.7]{Heap.png}
 		\end{figure}
@@ -3098,7 +3275,7 @@
 	
 	\url{http://blog.csdn.net/xiaoxiaoxuewen/article/details/7570621/}
 	
-\section{}
+\section{希尔排序}
 	
 	\subparagraph{Examples}
 	
@@ -3106,7 +3283,7 @@
 	
 	\subsection{解答}
 	
-\section{}
+\section{基数排序(桶)}
 	
 	\subparagraph{Examples}
 	
@@ -3115,21 +3292,6 @@
 	\subsection{解答}
 	
 	
-\section{}
-	
-	\subparagraph{Examples}
-	
-	\subsection{分析}
-	
-	\subsection{解答}
-	
-\section{}
-	
-	\subparagraph{Examples}
-	
-	\subsection{分析}
-	
-	\subsection{解答}
 \chapter{Bit Manipulation- 26}
 \section{}
 	
